@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioNaoEncontradoException;
+
+
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -69,4 +72,19 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler {
                 request
         );
     }
+
+    @ExceptionHandler(FuncionarioNaoEncontradoException.class)
+    public ProblemDetail tratarFuncionarioNaoEncontrado(
+            FuncionarioNaoEncontradoException exception
+    ) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage()
+        );
+
+        problema.setTitle("Funcionário não encontrado");
+
+        return problema;
+    }
+
 }

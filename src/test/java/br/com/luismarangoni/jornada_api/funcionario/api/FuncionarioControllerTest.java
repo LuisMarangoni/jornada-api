@@ -93,4 +93,50 @@ class FuncionarioControllerTest {
                 .andExpect(jsonPath("$.detail")
                         .value("Matrícula já cadastrada: MAT-201"));
     }
+
+    @Test
+    void deveBuscarFuncionarioPorId() throws Exception {
+        mockMvc.perform(post("/funcionarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "matricula": "MAT-301",
+                              "nome": "Carlos Souza",
+                              "email": "carlos@email.com"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        Long id = repository.findByMatricula("MAT-301")
+                .orElseThrow()
+                .getId();
+
+        mockMvc.perform(
+                        org.springframework.test.web.servlet.request
+                                .MockMvcRequestBuilders
+                                .get("/funcionarios/{id}", id)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.matricula").value("MAT-301"))
+                .andExpect(jsonPath("$.nome").value("Carlos Souza"))
+                .andExpect(jsonPath("$.email").value("carlos@email.com"))
+                .andExpect(jsonPath("$.ativo").value(true));
+    }
+
+    @Test
+    void deveRetornar404QuandoFuncionarioNaoExistir() throws Exception {
+        mockMvc.perform(
+                        org.springframework.test.web.servlet.request
+                                .MockMvcRequestBuilders
+                                .get("/funcionarios/{id}", 999999L)
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.title")
+                        .value("Funcionário não encontrado"))
+                .andExpect(jsonPath("$.detail")
+                        .value("Funcionário não encontrado: 999999"));
+    }
+
 }

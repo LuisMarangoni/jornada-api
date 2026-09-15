@@ -6,6 +6,9 @@ import br.com.luismarangoni.jornada_api.funcionario.aplicacao.porta.FuncionarioR
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioConsulta;
+import java.util.Optional;
+
 
 @Repository
 public class FuncionarioRepositoryAdapter
@@ -45,6 +48,18 @@ public class FuncionarioRepositoryAdapter
 
             throw exception;
         }
+    }
+
+    @Override
+    public Optional<FuncionarioConsulta> buscarPorId(Long id) {
+        return jpaRepository.findById(id)
+                .map(entidade -> new FuncionarioConsulta(
+                        entidade.getId(),
+                        entidade.getMatricula(),
+                        entidade.getNome(),
+                        entidade.getEmail(),
+                        entidade.isAtivo()
+                ));
     }
 
     private boolean violouMatriculaUnica(Throwable erro) {

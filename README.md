@@ -17,11 +17,12 @@ Projeto de portfólio em desenvolvimento para gestão de funcionários e jornada
 - Caso de uso `CadastrarFuncionario`, com consulta prévia de matrícula e persistência por uma interface independente do JPA.
 - Adaptador JPA com tradução específica da violação de matrícula única.
 - Endpoint `POST /funcionarios` com DTOs em records e validação da entrada.
+- Endpoint `GET /funcionarios/{id}` com DTO de resposta e tratamento de inexistência.
 - Erros HTTP de validação e matrícula duplicada padronizados com `ProblemDetail`.
-- 22 testes: 10 cenários do domínio, 3 do caso de uso, 2 do repositório JPA, 3 do adaptador, 3 HTTP e 1 de contexto Spring.
+- 28 testes: 10 cenários do domínio, 5 do controller HTTP, 5 do adaptador, 3 do cadastro, 2 da consulta, 2 do repositório JPA e 1 de contexto Spring.
 - GitHub Actions executa a suíte com Java 21 em pushes e pull requests para `main`.
 
-O cadastro está disponível por HTTP. Ainda não há consulta de funcionários por endpoint, autenticação ou registro de ponto. O DTO de entrada valida formato de e-mail e limites de tamanho; o domínio mantém suas próprias verificações de campos obrigatórios e normalização. A unicidade da matrícula é garantida no PostgreSQL e traduzida para conflito HTTP.
+O cadastro e a consulta por ID estão disponíveis por HTTP. Ainda não há listagem, autenticação ou registro de ponto. O DTO de entrada valida formato de e-mail e limites de tamanho; o domínio mantém suas próprias verificações de campos obrigatórios e normalização. A unicidade da matrícula é garantida no PostgreSQL e traduzida para conflito HTTP. IDs inexistentes retornam `404` em Problem Details.
 
 ## Separação de responsabilidades
 
@@ -31,6 +32,8 @@ O cadastro está disponível por HTTP. Ainda não há consulta de funcionários 
 - `FuncionarioRepositoryAdapter`: implementa essa porta, converte o domínio para `FuncionarioJpaEntity` e delega ao Spring Data JPA.
 - `FuncionarioConfiguration`: registra o caso de uso como bean, sem adicionar anotações Spring à aplicação ou ao domínio.
 - `FuncionarioController`: recebe o DTO validado, executa o caso de uso e devolve um DTO com o ID, sem expor a entidade JPA.
+- `BuscarFuncionario`: consulta um funcionário pela porta e traduz ausência em `FuncionarioNaoEncontradoException`.
+- `FuncionarioResponse`: DTO de saída que preserva ID, dados normalizados e estado ativo, sem expor a entidade JPA.
 - `TratadorGlobalDeErros`: trata erros HTTP globalmente; validação retorna `400` e matrícula duplicada retorna `409`, sem expor a causa SQL.
 
 O cadastro consulta a matrícula já normalizada antes de salvar. Essa consulta não elimina a possibilidade de concorrência: a restrição `uk_funcionarios_matricula` é a garantia final. O adaptador converte especificamente essa violação em `MatriculaJaCadastradaException`, preservando a causa original e propagando outros erros de integridade. Ainda não há teste de cadastros simultâneos.
@@ -73,7 +76,7 @@ O Spring gerencia o ciclo de vida do container de teste. Os dados do volume de d
 
 Os testes do adaptador verificam a persistência do domínio, a consulta de existência por matrícula, a tradução de duplicação e a preservação de outros erros de integridade. O cenário de nome acima do limite da coluna provoca um erro SQL intencionalmente.
 
-Os testes HTTP usam MockMvc com a aplicação e a persistência reais no banco temporário. Verificam `201` com gravação, `400` para e-mail inválido sem gravação e `409` para matrícula duplicada, incluindo o formato `application/problem+json` dos erros.
+Os testes HTTP usam MockMvc com a aplicação e a persistência reais no banco temporário. Verificam `201` com gravação, `400` para e-mail inválido sem gravação, `409` para matrícula duplicada, `200` na consulta e `404` para ID inexistente, incluindo o formato `application/problem+json` dos erros.
 
 ## Banco de desenvolvimento
 
@@ -133,6 +136,26 @@ Resposta esperada: `201 Created`, com `{"id": 1}` (ID ilustrativo; o banco gera 
 Todos os campos são obrigatórios. Os limites da entrada são 50 caracteres para matrícula, 150 para nome e 254 para e-mail, que também deve ter formato válido. A matrícula é normalizada removendo espaços nas extremidades, mas não é convertida para maiúsculas; a verificação atual distingue maiúsculas e minúsculas.
 
 Dados inválidos retornam `400 Bad Request` com `ProblemDetail` e a propriedade `erros`, que agrupa mensagens por campo. Matrícula já cadastrada retorna `409 Conflict`. O tratamento segue o formato Problem Details suportado pelo Spring (RFC 9457).
+
+Para consultar um funcionário:
+
+```http
+GET http://localhost:8082/funcionarios/1
+```
+
+Um funcionário existente retorna `200 OK` com:
+
+```json
+{
+  "id": 1,
+  "matricula": "MAT-001",
+  "nome": "Ana Silva",
+  "email": "ana@email.com",
+  "ativo": true
+}
+```
+
+Um ID inexistente retorna `404 Not Found` com `title` `Funcionário não encontrado` e o detalhe correspondente. O endpoint ainda não exige autenticação e deve permanecer restrito ao ambiente local.
 
 Teste manual no PowerShell, em um segundo terminal:
 
@@ -195,7 +218,7 @@ src/
 ## Roadmap
 
 1. **Base do domínio:** estrutura inicial e testes de funcionário — concluída.
-2. **Cadastro persistente — em andamento:** cadastro HTTP, validação, tratamento de conflitos e persistência implementados; consultas e jornada prevista serão desenvolvidas nas próximas entregas.
+2. **Cadastro persistente — em andamento:** cadastro e consulta HTTP, validação, tratamento de conflitos e persistência implementados; listagem e jornada prevista serão desenvolvidas nas próximas entregas.
 3. **Controle de acesso:** contas e permissões de funcionário/RH, separadas dos dados profissionais.
 4. **Marcações e apuração:** entradas, saídas, intervalos e identificação de pendências.
 5. **Ajustes auditáveis:** solicitações, aprovação pelo RH e preservação do histórico original.

@@ -11,6 +11,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioConsulta;
+
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -96,4 +98,34 @@ class FuncionarioRepositoryAdapterTest {
                 () -> repository.salvar(funcionario)
         );
     }
+
+    @Test
+    void deveConsultarFuncionarioPreservandoEstadoInativo() {
+        FuncionarioJpaEntity salvo = jpaRepository.saveAndFlush(
+                new FuncionarioJpaEntity(
+                        "MAT-104",
+                        "Ana Silva",
+                        "ana@email.com",
+                        false
+                )
+        );
+
+        Long id = salvo.getId();
+        entityManager.clear();
+
+        FuncionarioConsulta encontrado = repository.buscarPorId(id)
+                .orElseThrow();
+
+        assertEquals(id, encontrado.id());
+        assertEquals("MAT-104", encontrado.matricula());
+        assertEquals("Ana Silva", encontrado.nome());
+        assertEquals("ana@email.com", encontrado.email());
+        assertFalse(encontrado.ativo());
+    }
+
+    @Test
+    void deveRetornarVazioQuandoFuncionarioNaoExiste() {
+        assertTrue(repository.buscarPorId(Long.MAX_VALUE).isEmpty());
+    }
+
 }
