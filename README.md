@@ -16,10 +16,12 @@ Projeto de portfólio em desenvolvimento para gestão de funcionários e jornada
 - Migration Flyway para a tabela `funcionarios`, com matrícula única.
 - Caso de uso `CadastrarFuncionario`, com consulta prévia de matrícula e persistência por uma interface independente do JPA.
 - Adaptador JPA com tradução específica da violação de matrícula única.
-- 19 testes: 10 cenários do domínio, 3 do caso de uso, 2 do repositório JPA, 3 do adaptador e 1 de contexto Spring.
+- Endpoint `POST /funcionarios` com DTOs em records e validação da entrada.
+- Erros HTTP de validação e matrícula duplicada padronizados com `ProblemDetail`.
+- 22 testes: 10 cenários do domínio, 3 do caso de uso, 2 do repositório JPA, 3 do adaptador, 3 HTTP e 1 de contexto Spring.
 - GitHub Actions executa a suíte com Java 21 em pushes e pull requests para `main`.
 
-O caso de uso de cadastro está implementado e registrado no Spring, mas ainda não há endpoints de negócio, autenticação ou registro de ponto. O domínio ainda não verifica formato de e-mail ou limites de tamanho. A unicidade da matrícula é garantida no PostgreSQL e traduzida para uma exceção da aplicação; o tratamento HTTP será implementado posteriormente.
+O cadastro está disponível por HTTP. Ainda não há consulta de funcionários por endpoint, autenticação ou registro de ponto. O DTO de entrada valida formato de e-mail e limites de tamanho; o domínio mantém suas próprias verificações de campos obrigatórios e normalização. A unicidade da matrícula é garantida no PostgreSQL e traduzida para conflito HTTP.
 
 ## Separação de responsabilidades
 
@@ -28,6 +30,8 @@ O caso de uso de cadastro está implementado e registrado no Spring, mas ainda n
 - `FuncionarioRepository`: porta de saída que define a consulta por matrícula e a gravação, retornando o ID gerado.
 - `FuncionarioRepositoryAdapter`: implementa essa porta, converte o domínio para `FuncionarioJpaEntity` e delega ao Spring Data JPA.
 - `FuncionarioConfiguration`: registra o caso de uso como bean, sem adicionar anotações Spring à aplicação ou ao domínio.
+- `FuncionarioController`: recebe o DTO validado, executa o caso de uso e devolve um DTO com o ID, sem expor a entidade JPA.
+- `TratadorGlobalDeErros`: trata erros HTTP globalmente; validação retorna `400` e matrícula duplicada retorna `409`, sem expor a causa SQL.
 
 O cadastro consulta a matrícula já normalizada antes de salvar. Essa consulta não elimina a possibilidade de concorrência: a restrição `uk_funcionarios_matricula` é a garantia final. O adaptador converte especificamente essa violação em `MatriculaJaCadastradaException`, preservando a causa original e propagando outros erros de integridade. Ainda não há teste de cadastros simultâneos.
 
@@ -69,6 +73,8 @@ O Spring gerencia o ciclo de vida do container de teste. Os dados do volume de d
 
 Os testes do adaptador verificam a persistência do domínio, a consulta de existência por matrícula, a tradução de duplicação e a preservação de outros erros de integridade. O cenário de nome acima do limite da coluna provoca um erro SQL intencionalmente.
 
+Os testes HTTP usam MockMvc com a aplicação e a persistência reais no banco temporário. Verificam `201` com gravação, `400` para e-mail inválido sem gravação e `409` para matrícula duplicada, incluindo o formato `application/problem+json` dos erros.
+
 ## Banco de desenvolvimento
 
 Crie `.env` na raiz, seguindo `.env.example`, e substitua o exemplo pela senha local:
@@ -101,9 +107,48 @@ Com o banco de desenvolvimento pronto, execute na raiz do projeto:
 .\mvnw.cmd spring-boot:run
 ```
 
-A aplicação inicia na porta `8082`. Como ainda não há controllers de negócio, acessar `/` pode retornar `404`; isso não indica falha de inicialização. Para encerrar, pressione `Ctrl+C` no terminal.
+A aplicação inicia na porta `8082`. Não há rota para `/`, portanto acessá-la pode retornar `404`; isso não indica falha de inicialização. Para encerrar, pressione `Ctrl+C` no terminal.
 
 O Flyway cria a estrutura por migrations; `spring.jpa.hibernate.ddl-auto=validate` deixa o Hibernate validar o mapeamento, sem gerar tabelas. Não edite migrations já aplicadas para evoluir o schema: crie uma nova versão.
+
+## Cadastro de funcionário
+
+Com a API e o banco de desenvolvimento rodando, envie:
+
+```http
+POST http://localhost:8082/funcionarios
+Content-Type: application/json
+```
+
+```json
+{
+  "matricula": "MAT-001",
+  "nome": "Ana Silva",
+  "email": "ana@email.com"
+}
+```
+
+Resposta esperada: `201 Created`, com `{"id": 1}` (ID ilustrativo; o banco gera o valor real).
+
+Todos os campos são obrigatórios. Os limites da entrada são 50 caracteres para matrícula, 150 para nome e 254 para e-mail, que também deve ter formato válido. A matrícula é normalizada removendo espaços nas extremidades, mas não é convertida para maiúsculas; a verificação atual distingue maiúsculas e minúsculas.
+
+Dados inválidos retornam `400 Bad Request` com `ProblemDetail` e a propriedade `erros`, que agrupa mensagens por campo. Matrícula já cadastrada retorna `409 Conflict`. O tratamento segue o formato Problem Details suportado pelo Spring (RFC 9457).
+
+Teste manual no PowerShell, em um segundo terminal:
+
+```powershell
+$corpo = @{
+    matricula = "MAT-001"
+    nome = "Ana Silva"
+    email = "ana@email.com"
+} | ConvertTo-Json
+
+$resposta = Invoke-WebRequest -UseBasicParsing -Method Post -Uri "http://localhost:8082/funcionarios" -ContentType "application/json; charset=utf-8" -Body ([Text.Encoding]::UTF8.GetBytes($corpo))
+$resposta.StatusCode
+$resposta.Content
+```
+
+Esse comando cria um registro persistente no banco de desenvolvimento. Repetir a mesma matrícula deve retornar `409`; não é necessário apagar o banco para testar outra matrícula. O endpoint ainda não exige autenticação: use apenas dados fictícios em ambiente local, sem exposição pública.
 
 ## Organização atual
 
@@ -112,8 +157,14 @@ src/
 ├── main/
 │   ├── java/br/com/luismarangoni/jornada_api/
 │   │   ├── JornadaApiApplication.java
+│   │   ├── infra/TratadorGlobalDeErros.java
 │   │   └── funcionario/
 │   │       ├── Funcionario.java
+│   │       ├── api/
+│   │       │   ├── FuncionarioController.java
+│   │       │   └── dto/
+│   │       │       ├── CadastrarFuncionarioRequest.java
+│   │       │       └── FuncionarioCriadoResponse.java
 │   │       ├── aplicacao/
 │   │       │   ├── CadastrarFuncionario.java
 │   │       │   ├── MatriculaJaCadastradaException.java
@@ -133,6 +184,7 @@ src/
     │   ├── PostgresTestConfiguration.java
     │   └── funcionario/
     │       ├── FuncionarioTest.java
+    │       ├── api/FuncionarioControllerTest.java
     │       ├── aplicacao/CadastrarFuncionarioTest.java
     │       └── infra/persistencia/
     │           ├── FuncionarioJpaRepositoryTest.java
@@ -143,7 +195,7 @@ src/
 ## Roadmap
 
 1. **Base do domínio:** estrutura inicial e testes de funcionário — concluída.
-2. **Cadastro persistente — em andamento:** PostgreSQL, migration, caso de uso e adaptador JPA implementados; faltam os endpoints, validação HTTP, tratamento de erros e jornada prevista.
+2. **Cadastro persistente — em andamento:** cadastro HTTP, validação, tratamento de conflitos e persistência implementados; consultas e jornada prevista serão desenvolvidas nas próximas entregas.
 3. **Controle de acesso:** contas e permissões de funcionário/RH, separadas dos dados profissionais.
 4. **Marcações e apuração:** entradas, saídas, intervalos e identificação de pendências.
 5. **Ajustes auditáveis:** solicitações, aprovação pelo RH e preservação do histórico original.
