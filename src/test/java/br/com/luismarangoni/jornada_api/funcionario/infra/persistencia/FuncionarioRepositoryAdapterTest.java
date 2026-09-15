@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioConsulta;
-
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.PaginaFuncionarios;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -126,6 +126,52 @@ class FuncionarioRepositoryAdapterTest {
     @Test
     void deveRetornarVazioQuandoFuncionarioNaoExiste() {
         assertTrue(repository.buscarPorId(Long.MAX_VALUE).isEmpty());
+    }
+
+    @Test
+    void deveListarFuncionariosPaginadosPorId() {
+        repository.salvar(new Funcionario(
+                "MAT-201",
+                "Ana Silva",
+                "ana@email.com"
+        ));
+
+        repository.salvar(new Funcionario(
+                "MAT-202",
+                "Bruno Souza",
+                "bruno@email.com"
+        ));
+
+        repository.salvar(new Funcionario(
+                "MAT-203",
+                "Carla Lima",
+                "carla@email.com"
+        ));
+
+        PaginaFuncionarios primeiraPagina =
+                repository.listar(0, 2);
+
+        assertEquals(2, primeiraPagina.conteudo().size());
+        assertEquals(0, primeiraPagina.pagina());
+        assertEquals(2, primeiraPagina.tamanho());
+        assertEquals(3, primeiraPagina.totalElementos());
+        assertEquals(2, primeiraPagina.totalPaginas());
+
+        assertEquals(
+                "MAT-201",
+                primeiraPagina.conteudo().get(0).matricula()
+        );
+        assertEquals(
+                "MAT-202",
+                primeiraPagina.conteudo().get(1).matricula()
+        );
+
+        PaginaFuncionarios segundaPagina =
+                repository.listar(1, 2);
+
+        assertEquals(1, segundaPagina.conteudo().size());
+        assertEquals("MAT-203",
+                segundaPagina.conteudo().get(0).matricula());
     }
 
 }

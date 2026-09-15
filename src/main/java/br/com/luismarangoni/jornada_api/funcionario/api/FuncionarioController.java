@@ -14,6 +14,11 @@ import br.com.luismarangoni.jornada_api.funcionario.aplicacao.BuscarFuncionario;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import br.com.luismarangoni.jornada_api.funcionario.api.dto.FuncionarioResponse;
+import br.com.luismarangoni.jornada_api.funcionario.api.dto.PaginaFuncionariosResponse;
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.ListarFuncionarios;
+import org.springframework.web.bind.annotation.RequestParam;
+
+
 
 @RestController
 @RequestMapping("/funcionarios")
@@ -21,13 +26,16 @@ public class FuncionarioController {
 
     private final CadastrarFuncionario cadastrarFuncionario;
     private final BuscarFuncionario buscarFuncionario;
+    private final ListarFuncionarios listarFuncionarios;
 
     public FuncionarioController(
             CadastrarFuncionario cadastrarFuncionario,
-            BuscarFuncionario buscarFuncionario
+            BuscarFuncionario buscarFuncionario,
+            ListarFuncionarios listarFuncionarios
     ) {
         this.cadastrarFuncionario = cadastrarFuncionario;
         this.buscarFuncionario = buscarFuncionario;
+        this.listarFuncionarios = listarFuncionarios;
     }
 
     @PostMapping
@@ -48,6 +56,16 @@ public class FuncionarioController {
     public FuncionarioResponse buscar(@PathVariable Long id) {
         return FuncionarioResponse.from(
                 buscarFuncionario.executar(id)
+        );
+    }
+
+    @GetMapping
+    public PaginaFuncionariosResponse listar(
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "10") int tamanho
+    ) {
+        return PaginaFuncionariosResponse.from(
+                listarFuncionarios.executar(pagina, tamanho)
         );
     }
 

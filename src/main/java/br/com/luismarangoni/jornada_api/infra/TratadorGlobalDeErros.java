@@ -87,4 +87,18 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler {
         return problema;
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail tratarArgumentoInvalido(
+            IllegalArgumentException exception
+    ) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage()
+        );
+
+        problema.setTitle("Parâmetro inválido");
+
+        return problema;
+    }
+
 }

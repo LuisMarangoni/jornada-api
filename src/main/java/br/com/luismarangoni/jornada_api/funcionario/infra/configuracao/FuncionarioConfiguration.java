@@ -7,7 +7,7 @@ import br.com.luismarangoni.jornada_api.funcionario.aplicacao.CadastrarFuncionar
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.porta.FuncionarioRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.ListarFuncionarios;
 
 
 
@@ -28,4 +28,12 @@ public class FuncionarioConfiguration {
     ) {
         return new BuscarFuncionario(repository);
     }
+
+    @Bean
+    public ListarFuncionarios listarFuncionarios(
+            FuncionarioRepository repository
+    ) {
+        return new ListarFuncionarios(repository);
+    }
+
 }

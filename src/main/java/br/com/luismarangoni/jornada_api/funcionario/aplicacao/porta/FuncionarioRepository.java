@@ -2,6 +2,7 @@ package br.com.luismarangoni.jornada_api.funcionario.aplicacao.porta;
 
 import br.com.luismarangoni.jornada_api.funcionario.Funcionario;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioConsulta;
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.PaginaFuncionarios;
 
 import java.util.Optional;
 
@@ -11,5 +12,6 @@ public interface FuncionarioRepository {
 
     Long salvar(Funcionario funcionario);
 
+    PaginaFuncionarios listar(int pagina, int tamanho);
     Optional<FuncionarioConsulta> buscarPorId(Long id);
 }

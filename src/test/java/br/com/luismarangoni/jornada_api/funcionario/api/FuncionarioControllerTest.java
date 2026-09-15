@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -137,6 +137,77 @@ class FuncionarioControllerTest {
                         .value("Funcionário não encontrado"))
                 .andExpect(jsonPath("$.detail")
                         .value("Funcionário não encontrado: 999999"));
+    }
+
+    @Test
+    void deveListarFuncionariosComPaginacao() throws Exception {
+        mockMvc.perform(post("/funcionarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "matricula": "MAT-401",
+                              "nome": "Ana Silva",
+                              "email": "ana401@email.com"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/funcionarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "matricula": "MAT-402",
+                              "nome": "Bruno Souza",
+                              "email": "bruno402@email.com"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/funcionarios")
+                        .param("pagina", "0")
+                        .param("tamanho", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo").isArray())
+                .andExpect(jsonPath("$.conteudo.length()").value(1))
+                .andExpect(jsonPath("$.conteudo[0].matricula")
+                        .value("MAT-401"))
+                .andExpect(jsonPath("$.pagina").value(0))
+                .andExpect(jsonPath("$.tamanho").value(1))
+                .andExpect(jsonPath("$.totalElementos").value(2))
+                .andExpect(jsonPath("$.totalPaginas").value(2));
+    }
+
+    @Test
+    void deveRetornarPaginaVaziaQuandoNaoHouverMaisRegistros()
+            throws Exception {
+        mockMvc.perform(get("/funcionarios")
+                        .param("pagina", "5")
+                        .param("tamanho", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo").isArray())
+                .andExpect(jsonPath("$.conteudo").isEmpty())
+                .andExpect(jsonPath("$.pagina").value(5))
+                .andExpect(jsonPath("$.tamanho").value(10))
+                .andExpect(jsonPath("$.totalElementos").value(0))
+                .andExpect(jsonPath("$.totalPaginas").value(0));
+    }
+
+    @Test
+    void deveRejeitarPaginaNegativa() throws Exception {
+        mockMvc.perform(get("/funcionarios")
+                        .param("pagina", "-1")
+                        .param("tamanho", "10"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Parâmetro inválido"));
+    }
+
+    @Test
+    void deveRejeitarTamanhoForaDoLimite() throws Exception {
+        mockMvc.perform(get("/funcionarios")
+                        .param("pagina", "0")
+                        .param("tamanho", "101"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Parâmetro inválido"));
     }
 
 }

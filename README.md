@@ -19,10 +19,10 @@ Projeto de portfólio em desenvolvimento para gestão de funcionários e jornada
 - Endpoint `POST /funcionarios` com DTOs em records e validação da entrada.
 - Endpoint `GET /funcionarios/{id}` com DTO de resposta e tratamento de inexistência.
 - Erros HTTP de validação e matrícula duplicada padronizados com `ProblemDetail`.
-- 28 testes: 10 cenários do domínio, 5 do controller HTTP, 5 do adaptador, 3 do cadastro, 2 da consulta, 2 do repositório JPA e 1 de contexto Spring.
+- 35 testes: 10 cenários do domínio, 9 do controller HTTP, 6 do adaptador, 3 do cadastro, 2 da consulta, 2 da listagem, 2 do repositório JPA e 1 de contexto Spring.
 - GitHub Actions executa a suíte com Java 21 em pushes e pull requests para `main`.
 
-O cadastro e a consulta por ID estão disponíveis por HTTP. Ainda não há listagem, autenticação ou registro de ponto. O DTO de entrada valida formato de e-mail e limites de tamanho; o domínio mantém suas próprias verificações de campos obrigatórios e normalização. A unicidade da matrícula é garantida no PostgreSQL e traduzida para conflito HTTP. IDs inexistentes retornam `404` em Problem Details.
+O cadastro, a consulta por ID e a listagem paginada estão disponíveis por HTTP. Ainda não há autenticação ou registro de ponto. O DTO de entrada valida formato de e-mail e limites de tamanho; o domínio mantém suas próprias verificações de campos obrigatórios e normalização. A unicidade da matrícula é garantida no PostgreSQL e traduzida para conflito HTTP. IDs inexistentes e parâmetros de paginação inválidos retornam `ProblemDetail`.
 
 ## Separação de responsabilidades
 
@@ -76,7 +76,7 @@ O Spring gerencia o ciclo de vida do container de teste. Os dados do volume de d
 
 Os testes do adaptador verificam a persistência do domínio, a consulta de existência por matrícula, a tradução de duplicação e a preservação de outros erros de integridade. O cenário de nome acima do limite da coluna provoca um erro SQL intencionalmente.
 
-Os testes HTTP usam MockMvc com a aplicação e a persistência reais no banco temporário. Verificam `201` com gravação, `400` para e-mail inválido sem gravação, `409` para matrícula duplicada, `200` na consulta e `404` para ID inexistente, incluindo o formato `application/problem+json` dos erros.
+Os testes HTTP usam MockMvc com a aplicação e a persistência reais no banco temporário. Verificam `201` com gravação, `400` para e-mail inválido, paginação inválida ou tamanho fora do limite, `409` para matrícula duplicada, `200` na consulta e listagem paginada e `404` para ID inexistente, incluindo o formato `application/problem+json` dos erros.
 
 ## Banco de desenvolvimento
 
@@ -215,10 +215,20 @@ src/
     └── resources/application.properties
 ```
 
+## Listagem de funcionÃ¡rios
+
+O endpoint `GET /funcionarios` lista os funcionÃ¡rios com paginaÃ§Ã£o:
+
+```http
+GET http://localhost:8082/funcionarios?pagina=0&tamanho=10
+```
+
+`pagina` comeÃ§a em zero e `tamanho` deve estar entre 1 e 100. A resposta inclui `conteudo` e os metadados `pagina`, `tamanho`, `totalElementos` e `totalPaginas`. Uma pÃ¡gina sem registros retorna `200` com `conteudo` vazio. ParÃ¢metros invÃ¡lidos retornam `400` com `ProblemDetail`.
+
 ## Roadmap
 
 1. **Base do domínio:** estrutura inicial e testes de funcionário — concluída.
-2. **Cadastro persistente — em andamento:** cadastro e consulta HTTP, validação, tratamento de conflitos e persistência implementados; listagem e jornada prevista serão desenvolvidas nas próximas entregas.
+2. **Cadastro persistente — concluída:** cadastro, consulta, listagem paginada, validação, tratamento de conflitos e persistência implementados.
 3. **Controle de acesso:** contas e permissões de funcionário/RH, separadas dos dados profissionais.
 4. **Marcações e apuração:** entradas, saídas, intervalos e identificação de pendências.
 5. **Ajustes auditáveis:** solicitações, aprovação pelo RH e preservação do histórico original.
