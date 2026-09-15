@@ -350,4 +350,159 @@ class FuncionarioControllerTest {
                 .andExpect(jsonPath("$.title").value("Dados inválidos"))
                 .andExpect(jsonPath("$.erros.ativo").isArray());
     }
+
+    @Test
+    void deveRegistrarMarcacaoParaFuncionario() throws Exception {
+        mockMvc.perform(post("/funcionarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "matricula": "MAT-801",
+                              "nome": "Ana Silva",
+                              "email": "ana801@email.com"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        Long funcionarioId = repository.findByMatricula("MAT-801")
+                .orElseThrow()
+                .getId();
+
+        mockMvc.perform(post(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        funcionarioId
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "tipo": "ENTRADA"
+                            }
+                            """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").isNumber())
+                .andExpect(jsonPath("$.funcionarioId").value(funcionarioId))
+                .andExpect(jsonPath("$.tipo").value("ENTRADA"))
+                .andExpect(jsonPath("$.ocorridaEm").isNotEmpty());
+    }
+
+    @Test
+    void deveRejeitarMarcacaoSemTipo() throws Exception {
+        mockMvc.perform(post(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        1L
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                            }
+                            """))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_PROBLEM_JSON
+                ))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.title").value("Dados inválidos"))
+                .andExpect(jsonPath("$.erros.tipo").isArray());
+    }
+
+    @Test
+    void deveRejeitarMarcacaoParaFuncionarioInativo() throws Exception {
+        var funcionario = repository.saveAndFlush(
+                new br.com.luismarangoni.jornada_api.funcionario
+                        .infra.persistencia.FuncionarioJpaEntity(
+                        "MAT-802",
+                        "Bruno Souza",
+                        "bruno802@email.com",
+                        false
+                )
+        );
+
+        mockMvc.perform(post(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        funcionario.getId()
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "tipo": "ENTRADA"
+                            }
+                            """))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_PROBLEM_JSON
+                ))
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.title")
+                        .value("Funcionário inativo"));
+    }
+
+    @Test
+    void deveListarMarcacoesDoFuncionario() throws Exception {
+        mockMvc.perform(post("/funcionarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "matricula": "MAT-901",
+                              "nome": "Ana Silva",
+                              "email": "ana901@email.com"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        Long funcionarioId = repository.findByMatricula("MAT-901")
+                .orElseThrow()
+                .getId();
+
+        mockMvc.perform(post(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        funcionarioId
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "tipo": "ENTRADA"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        funcionarioId
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "tipo": "SAIDA"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        funcionarioId
+                ))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].funcionarioId")
+                        .value(funcionarioId))
+                .andExpect(jsonPath("$[0].tipo").value("ENTRADA"))
+                .andExpect(jsonPath("$[1].tipo").value("SAIDA"))
+                .andExpect(jsonPath("$[0].ocorridaEm").isNotEmpty())
+                .andExpect(jsonPath("$[1].ocorridaEm").isNotEmpty());
+    }
+
+    @Test
+    void deveRetornar404AoListarMarcacoesDeFuncionarioInexistente()
+            throws Exception {
+        mockMvc.perform(get(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        999999L
+                ))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.title")
+                        .value("Funcionário não encontrado"));
+    }
+
 }

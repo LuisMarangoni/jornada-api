@@ -9,7 +9,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.ListarFuncionarios;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.AlterarStatusFuncionario;
-
+import br.com.luismarangoni.jornada_api.marcacao.aplicacao.RegistrarMarcacao;
+import br.com.luismarangoni.jornada_api.marcacao.aplicacao.porta.MarcacaoPontoRepository;
+import br.com.luismarangoni.jornada_api.marcacao.aplicacao.ListarMarcacoesFuncionario;
+import br.com.luismarangoni.jornada_api.marcacao.aplicacao.RegistrarMarcacao;
+import br.com.luismarangoni.jornada_api.marcacao.aplicacao.porta.MarcacaoPontoRepository;
+import java.time.Clock;
 
 
 @Configuration(proxyBeanMethods = false)
@@ -49,4 +54,28 @@ public class FuncionarioConfiguration {
     ) {
         return new AlterarStatusFuncionario(repository);
     }
+
+    @Bean
+    public RegistrarMarcacao registrarMarcacao(
+            FuncionarioRepository funcionarioRepository,
+            MarcacaoPontoRepository marcacaoRepository
+    ) {
+        return new RegistrarMarcacao(
+                funcionarioRepository,
+                marcacaoRepository,
+                Clock.systemUTC()
+        );
+    }
+
+    @Bean
+    public ListarMarcacoesFuncionario listarMarcacoesFuncionario(
+            FuncionarioRepository funcionarioRepository,
+            MarcacaoPontoRepository marcacaoRepository
+    ) {
+        return new ListarMarcacoesFuncionario(
+                funcionarioRepository,
+                marcacaoRepository
+        );
+    }
+
 }

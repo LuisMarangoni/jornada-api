@@ -23,6 +23,14 @@ import org.springframework.web.bind.annotation.PutMapping;
 import br.com.luismarangoni.jornada_api.funcionario.api.dto.AlterarStatusFuncionarioRequest;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.AlterarStatusFuncionario;
 import org.springframework.web.bind.annotation.PatchMapping;
+import br.com.luismarangoni.jornada_api.marcacao.api.dto.MarcacaoResponse;
+import br.com.luismarangoni.jornada_api.marcacao.api.dto.RegistrarMarcacaoRequest;
+import br.com.luismarangoni.jornada_api.marcacao.aplicacao.RegistrarMarcacao;
+import br.com.luismarangoni.jornada_api.marcacao.aplicacao.ListarMarcacoesFuncionario;
+
+import java.util.List;
+
+
 
 
 @RestController
@@ -34,19 +42,25 @@ public class FuncionarioController {
     private final ListarFuncionarios listarFuncionarios;
     private final AtualizarFuncionario atualizarFuncionario;
     private final AlterarStatusFuncionario alterarStatusFuncionario;
+    private final RegistrarMarcacao registrarMarcacao;
+    private final ListarMarcacoesFuncionario listarMarcacoesFuncionario;
 
     public FuncionarioController(
             CadastrarFuncionario cadastrarFuncionario,
             BuscarFuncionario buscarFuncionario,
             ListarFuncionarios listarFuncionarios,
             AtualizarFuncionario atualizarFuncionario,
-            AlterarStatusFuncionario alterarStatusFuncionario
+            AlterarStatusFuncionario alterarStatusFuncionario,
+            RegistrarMarcacao registrarMarcacao,
+            ListarMarcacoesFuncionario listarMarcacoesFuncionario
     ) {
         this.cadastrarFuncionario = cadastrarFuncionario;
         this.buscarFuncionario = buscarFuncionario;
         this.listarFuncionarios = listarFuncionarios;
         this.atualizarFuncionario = atualizarFuncionario;
         this.alterarStatusFuncionario = alterarStatusFuncionario;
+        this.registrarMarcacao = registrarMarcacao;
+        this.listarMarcacoesFuncionario = listarMarcacoesFuncionario;
     }
 
     @PostMapping
@@ -77,6 +91,16 @@ public class FuncionarioController {
         );
     }
 
+    @GetMapping("/{funcionarioId}/marcacoes")
+    public List<MarcacaoResponse> listarMarcacoes(
+            @PathVariable Long funcionarioId
+    ) {
+        return listarMarcacoesFuncionario.executar(funcionarioId)
+                .stream()
+                .map(MarcacaoResponse::from)
+                .toList();
+    }
+
     @GetMapping("/{id}")
     public FuncionarioResponse buscar(@PathVariable Long id) {
         return FuncionarioResponse.from(
@@ -103,4 +127,19 @@ public class FuncionarioController {
                 alterarStatusFuncionario.executar(id, request.ativo())
         );
     }
+
+    @PostMapping("/{funcionarioId}/marcacoes")
+    @ResponseStatus(HttpStatus.CREATED)
+    public MarcacaoResponse registrarMarcacao(
+            @PathVariable Long funcionarioId,
+            @Valid @RequestBody RegistrarMarcacaoRequest request
+    ) {
+        return MarcacaoResponse.from(
+                registrarMarcacao.executar(
+                        funcionarioId,
+                        request.tipo()
+                )
+        );
+    }
+
 }

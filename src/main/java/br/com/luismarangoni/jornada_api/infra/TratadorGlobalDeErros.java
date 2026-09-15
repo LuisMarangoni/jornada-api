@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioNaoEncontradoException;
-
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioInativoException;
 
 
 import java.util.ArrayList;
@@ -97,6 +97,20 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler {
         );
 
         problema.setTitle("Parâmetro inválido");
+
+        return problema;
+    }
+
+    @ExceptionHandler(FuncionarioInativoException.class)
+    public ProblemDetail tratarFuncionarioInativo(
+            FuncionarioInativoException exception
+    ) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                exception.getMessage()
+        );
+
+        problema.setTitle("Funcionário inativo");
 
         return problema;
     }
