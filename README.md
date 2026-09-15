@@ -14,10 +14,22 @@ Projeto de portfólio em desenvolvimento para gestão de funcionários e jornada
 - Funcionários são criados ativos.
 - Persistência com Spring Data JPA e PostgreSQL 17, separada do domínio.
 - Migration Flyway para a tabela `funcionarios`, com matrícula única.
-- 13 testes: 10 cenários do domínio, 2 de persistência e 1 de contexto Spring.
+- Caso de uso `CadastrarFuncionario`, com consulta prévia de matrícula e persistência por uma interface independente do JPA.
+- Adaptador JPA com tradução específica da violação de matrícula única.
+- 19 testes: 10 cenários do domínio, 3 do caso de uso, 2 do repositório JPA, 3 do adaptador e 1 de contexto Spring.
 - GitHub Actions executa a suíte com Java 21 em pushes e pull requests para `main`.
 
-Ainda não existem casos de uso de cadastro expostos por endpoints, autenticação ou registro de ponto. O domínio ainda não verifica formato de e-mail ou limites de tamanho. A unicidade da matrícula já é garantida no PostgreSQL; o tratamento dessa violação na API será implementado posteriormente.
+O caso de uso de cadastro está implementado e registrado no Spring, mas ainda não há endpoints de negócio, autenticação ou registro de ponto. O domínio ainda não verifica formato de e-mail ou limites de tamanho. A unicidade da matrícula é garantida no PostgreSQL e traduzida para uma exceção da aplicação; o tratamento HTTP será implementado posteriormente.
+
+## Separação de responsabilidades
+
+- `Funcionario`: domínio Java, com validação de campos obrigatórios e normalização.
+- `CadastrarFuncionario`: coordena o cadastro e depende apenas do contrato `FuncionarioRepository`.
+- `FuncionarioRepository`: porta de saída que define a consulta por matrícula e a gravação, retornando o ID gerado.
+- `FuncionarioRepositoryAdapter`: implementa essa porta, converte o domínio para `FuncionarioJpaEntity` e delega ao Spring Data JPA.
+- `FuncionarioConfiguration`: registra o caso de uso como bean, sem adicionar anotações Spring à aplicação ou ao domínio.
+
+O cadastro consulta a matrícula já normalizada antes de salvar. Essa consulta não elimina a possibilidade de concorrência: a restrição `uk_funcionarios_matricula` é a garantia final. O adaptador converte especificamente essa violação em `MatriculaJaCadastradaException`, preservando a causa original e propagando outros erros de integridade. Ainda não há teste de cadastros simultâneos.
 
 ## Pré-requisitos
 
@@ -41,11 +53,21 @@ Os testes de `Funcionario` instanciam a classe diretamente, sem carregar o Sprin
 .\mvnw.cmd "-Dtest=FuncionarioTest" test
 ```
 
+Os testes do caso de uso também dispensam Docker e usam Mockito para simular a porta de persistência:
+
+```powershell
+.\mvnw.cmd "-Dtest=CadastrarFuncionarioTest" test
+```
+
+Eles verificam o envio de dados normalizados, o bloqueio de matrícula existente e a rejeição de dados inválidos antes de acessar o repositório.
+
 Os testes de contexto e persistência utilizam Testcontainers com PostgreSQL 17 em um container temporário, com porta dinâmica e credenciais fictícias. `@ServiceConnection` fornece a conexão ao Spring; não é necessário `.env`, senha real, API em execução ou banco do Compose. O arquivo `src/test/resources/application.properties` mantém a configuração dos testes separada da configuração local.
 
 O Flyway executa as migrations nesse banco temporário e o Hibernate valida o mapeamento. Os testes de repositório verificam gravação e leitura após limpar o contexto de persistência, além da rejeição de matrícula duplicada. As transações dos testes são revertidas ao final. Uma mensagem SQL de chave duplicada é esperada no cenário que provoca essa violação; a suíte deve terminar com sucesso.
 
 O Spring gerencia o ciclo de vida do container de teste. Os dados do volume de desenvolvimento não são utilizados. A execução completa no GitHub Actions também depende do Docker disponível no runner.
+
+Os testes do adaptador verificam a persistência do domínio, a consulta de existência por matrícula, a tradução de duplicação e a preservação de outros erros de integridade. O cenário de nome acima do limite da coluna provoca um erro SQL intencionalmente.
 
 ## Banco de desenvolvimento
 
@@ -92,9 +114,16 @@ src/
 │   │   ├── JornadaApiApplication.java
 │   │   └── funcionario/
 │   │       ├── Funcionario.java
-│   │       └── infra/persistencia/
-│   │           ├── FuncionarioJpaEntity.java
-│   │           └── FuncionarioJpaRepository.java
+│   │       ├── aplicacao/
+│   │       │   ├── CadastrarFuncionario.java
+│   │       │   ├── MatriculaJaCadastradaException.java
+│   │       │   └── porta/FuncionarioRepository.java
+│   │       └── infra/
+│   │           ├── configuracao/FuncionarioConfiguration.java
+│   │           └── persistencia/
+│   │               ├── FuncionarioJpaEntity.java
+│   │               ├── FuncionarioJpaRepository.java
+│   │               └── FuncionarioRepositoryAdapter.java
 │   └── resources/
 │       ├── application.properties
 │       └── db/migration/V1__criar_tabela_funcionarios.sql
@@ -104,14 +133,17 @@ src/
     │   ├── PostgresTestConfiguration.java
     │   └── funcionario/
     │       ├── FuncionarioTest.java
-    │       └── infra/persistencia/FuncionarioJpaRepositoryTest.java
+    │       ├── aplicacao/CadastrarFuncionarioTest.java
+    │       └── infra/persistencia/
+    │           ├── FuncionarioJpaRepositoryTest.java
+    │           └── FuncionarioRepositoryAdapterTest.java
     └── resources/application.properties
 ```
 
 ## Roadmap
 
 1. **Base do domínio:** estrutura inicial e testes de funcionário — concluída.
-2. **Cadastro persistente — em andamento:** PostgreSQL, migration e repositório JPA implementados; faltam os casos de uso, endpoints e jornada prevista.
+2. **Cadastro persistente — em andamento:** PostgreSQL, migration, caso de uso e adaptador JPA implementados; faltam os endpoints, validação HTTP, tratamento de erros e jornada prevista.
 3. **Controle de acesso:** contas e permissões de funcionário/RH, separadas dos dados profissionais.
 4. **Marcações e apuração:** entradas, saídas, intervalos e identificação de pendências.
 5. **Ajustes auditáveis:** solicitações, aprovação pelo RH e preservação do histórico original.

@@ -4,4 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface FuncionarioJpaRepository
         extends JpaRepository<FuncionarioJpaEntity, Long> {
+
+    boolean existsByMatricula(String matricula);
 }

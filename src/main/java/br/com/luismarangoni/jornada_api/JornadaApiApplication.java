@@ -9,5 +9,4 @@ public class JornadaApiApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(JornadaApiApplication.class, args);
 	}
-
 }
