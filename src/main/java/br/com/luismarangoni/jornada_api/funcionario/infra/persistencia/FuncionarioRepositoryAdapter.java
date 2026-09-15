@@ -128,4 +128,13 @@ public class FuncionarioRepositoryAdapter
         jpaRepository.saveAndFlush(entidade);
     }
 
+    @Override
+    public void atualizarStatus(Long id, boolean ativo) {
+        FuncionarioJpaEntity entidade = jpaRepository.findById(id)
+                .orElseThrow(() -> new FuncionarioNaoEncontradoException(id));
+
+        entidade.alterarStatus(ativo);
+        jpaRepository.saveAndFlush(entidade);
+    }
+
 }

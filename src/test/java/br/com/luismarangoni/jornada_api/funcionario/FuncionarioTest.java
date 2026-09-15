@@ -90,4 +90,19 @@ class FuncionarioTest {
         assertTrue(funcionario.isAtivo());
     }
 
+    @Test
+    void deveAlterarStatusDoFuncionario() {
+        Funcionario funcionario = new Funcionario(
+                "MAT-001",
+                "Ana Silva",
+                "ana@email.com"
+        );
+
+        funcionario.alterarStatus(false);
+        assertFalse(funcionario.isAtivo());
+
+        funcionario.alterarStatus(true);
+        assertTrue(funcionario.isAtivo());
+    }
+
 }

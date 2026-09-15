@@ -19,10 +19,10 @@ Projeto de portfólio em desenvolvimento para gestão de funcionários e jornada
 - Endpoint `POST /funcionarios` com DTOs em records e validação da entrada.
 - Endpoint `GET /funcionarios/{id}` com DTO de resposta e tratamento de inexistência.
 - Erros HTTP de validação e matrícula duplicada padronizados com `ProblemDetail`.
-- 42 testes: 11 cenários do domínio, 12 do controller HTTP, 7 do adaptador, 3 do cadastro, 2 da consulta, 2 da listagem, 2 da atualização, 2 do repositório JPA e 1 de contexto Spring.
+- 49 testes: 12 cenários do domínio, 15 do controller HTTP, 8 do adaptador, 3 do cadastro, 2 da consulta, 2 da listagem, 2 da atualização, 2 da alteração de status, 2 do repositório JPA e 1 de contexto Spring.
 - GitHub Actions executa a suíte com Java 21 em pushes e pull requests para `main`.
 
-O cadastro, a consulta por ID, a atualização e a listagem paginada estão disponíveis por HTTP. Ainda não há autenticação ou registro de ponto. O DTO de entrada valida formato de e-mail e limites de tamanho; o domínio mantém suas próprias verificações de campos obrigatórios e normalização. A unicidade da matrícula é garantida no PostgreSQL e traduzida para conflito HTTP. IDs inexistentes e parâmetros de paginação inválidos retornam `ProblemDetail`.
+O cadastro, a consulta por ID, a atualização, a alteração de status e a listagem paginada estão disponíveis por HTTP. Ainda não há autenticação ou registro de ponto. O DTO de entrada valida formato de e-mail e limites de tamanho; o domínio mantém suas próprias verificações de campos obrigatórios e normalização. A unicidade da matrícula é garantida no PostgreSQL e traduzida para conflito HTTP. IDs inexistentes e parâmetros de paginação inválidos retornam `ProblemDetail`.
 
 ## Separação de responsabilidades
 
@@ -33,6 +33,7 @@ O cadastro, a consulta por ID, a atualização e a listagem paginada estão disp
 - `FuncionarioConfiguration`: registra o caso de uso como bean, sem adicionar anotações Spring à aplicação ou ao domínio.
 - `FuncionarioController`: recebe o DTO validado, executa o caso de uso e devolve um DTO com o ID, sem expor a entidade JPA.
 - `BuscarFuncionario`: consulta um funcionário pela porta e traduz ausência em `FuncionarioNaoEncontradoException`.
+- `AlterarStatusFuncionario`: verifica a existência e altera somente o estado ativo/inativo do funcionário.
 - `AtualizarFuncionario`: verifica a existência, valida os novos dados pelo domínio e preserva matrícula e estado durante a atualização.
 - `FuncionarioResponse`: DTO de saída que preserva ID, dados normalizados e estado ativo, sem expor a entidade JPA.
 - `TratadorGlobalDeErros`: trata erros HTTP globalmente; validação retorna `400` e matrícula duplicada retorna `409`, sem expor a causa SQL.
@@ -175,6 +176,23 @@ Content-Type: application/json
 ```
 
 Um funcionário existente retorna `200 OK` com os dados atualizados. E-mail inválido ou campos ausentes retornam `400`; ID inexistente retorna `404`. A matrícula e o estado `ativo` não são alterados por este endpoint.
+
+## Ativação e desativação
+
+Para alterar somente o estado do funcionário:
+
+```http
+PATCH http://localhost:8082/funcionarios/1/ativo
+Content-Type: application/json
+```
+
+```json
+{
+  "ativo": false
+}
+```
+
+O endpoint retorna `200 OK` com o funcionário atualizado. O campo `ativo` é obrigatório; corpo sem esse campo retorna `400`, e ID inexistente retorna `404`. Desativar preserva matrícula, nome e e-mail, e será usado futuramente para bloquear marcações de ponto de funcionários inativos.
 
 Teste manual no PowerShell, em um segundo terminal:
 

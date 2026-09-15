@@ -199,4 +199,24 @@ class FuncionarioRepositoryAdapterTest {
         assertTrue(atualizado.isAtivo());
     }
 
+    @Test
+    void deveAtualizarStatusDoFuncionario() {
+        Long id = repository.salvar(new Funcionario(
+                "MAT-401",
+                "Ana Silva",
+                "ana@email.com"
+        ));
+
+        repository.atualizarStatus(id, false);
+
+        entityManager.clear();
+
+        FuncionarioJpaEntity atualizado = jpaRepository.findById(id)
+                .orElseThrow();
+
+        assertFalse(atualizado.isAtivo());
+        assertEquals("MAT-401", atualizado.getMatricula());
+        assertEquals("Ana Silva", atualizado.getNome());
+        assertEquals("ana@email.com", atualizado.getEmail());
+    }
 }

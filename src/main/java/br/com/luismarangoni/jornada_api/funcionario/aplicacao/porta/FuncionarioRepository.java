@@ -9,6 +9,7 @@ import java.util.Optional;
 public interface FuncionarioRepository {
 
     void atualizar(Long id, String nome, String email);
+    void atualizarStatus(Long id, boolean ativo);
 
     boolean existePorMatricula(String matricula);
 

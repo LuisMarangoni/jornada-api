@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import br.com.luismarangoni.jornada_api.funcionario.api.dto.AtualizarFuncionarioRequest;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.AtualizarFuncionario;
 import org.springframework.web.bind.annotation.PutMapping;
+import br.com.luismarangoni.jornada_api.funcionario.api.dto.AlterarStatusFuncionarioRequest;
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.AlterarStatusFuncionario;
+import org.springframework.web.bind.annotation.PatchMapping;
 
 
 @RestController
@@ -30,17 +33,20 @@ public class FuncionarioController {
     private final BuscarFuncionario buscarFuncionario;
     private final ListarFuncionarios listarFuncionarios;
     private final AtualizarFuncionario atualizarFuncionario;
+    private final AlterarStatusFuncionario alterarStatusFuncionario;
 
     public FuncionarioController(
             CadastrarFuncionario cadastrarFuncionario,
             BuscarFuncionario buscarFuncionario,
             ListarFuncionarios listarFuncionarios,
-            AtualizarFuncionario atualizarFuncionario
+            AtualizarFuncionario atualizarFuncionario,
+            AlterarStatusFuncionario alterarStatusFuncionario
     ) {
         this.cadastrarFuncionario = cadastrarFuncionario;
         this.buscarFuncionario = buscarFuncionario;
         this.listarFuncionarios = listarFuncionarios;
         this.atualizarFuncionario = atualizarFuncionario;
+        this.alterarStatusFuncionario = alterarStatusFuncionario;
     }
 
     @PostMapping
@@ -88,4 +94,13 @@ public class FuncionarioController {
         );
     }
 
+    @PatchMapping("/{id}/ativo")
+    public FuncionarioResponse alterarStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody AlterarStatusFuncionarioRequest request
+    ) {
+        return FuncionarioResponse.from(
+                alterarStatusFuncionario.executar(id, request.ativo())
+        );
+    }
 }

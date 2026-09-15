@@ -8,7 +8,7 @@ import br.com.luismarangoni.jornada_api.funcionario.aplicacao.porta.FuncionarioR
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.ListarFuncionarios;
-
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.AlterarStatusFuncionario;
 
 
 
@@ -43,4 +43,10 @@ public class FuncionarioConfiguration {
         return new AtualizarFuncionario(repository);
     }
 
+    @Bean
+    public AlterarStatusFuncionario alterarStatusFuncionario(
+            FuncionarioRepository repository
+    ) {
+        return new AlterarStatusFuncionario(repository);
+    }
 }

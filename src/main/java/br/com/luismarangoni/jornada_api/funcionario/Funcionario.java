@@ -7,12 +7,17 @@ public class Funcionario {
     private final String matricula;
     private String nome;
     private String email;
-    private final boolean ativo;
+    private boolean ativo;
+
 
     public void atualizarDados(String nome, String email) {
         this.nome = exigirTexto(nome, "Nome");
         this.email = exigirTexto(email, "E-mail")
                 .toLowerCase(Locale.ROOT);
+    }
+
+    public void alterarStatus(boolean ativo) {
+        this.ativo = ativo;
     }
 
     public Funcionario(

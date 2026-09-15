@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -286,4 +286,68 @@ class FuncionarioControllerTest {
                 .andExpect(jsonPath("$.erros.email").isArray());
     }
 
+    @Test
+    void deveDesativarFuncionario() throws Exception {
+        mockMvc.perform(post("/funcionarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "matricula": "MAT-601",
+                              "nome": "Ana Silva",
+                              "email": "ana@email.com"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        Long id = repository.findByMatricula("MAT-601")
+                .orElseThrow()
+                .getId();
+
+        mockMvc.perform(patch("/funcionarios/{id}/ativo", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "ativo": false
+                            }
+                            """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.matricula").value("MAT-601"))
+                .andExpect(jsonPath("$.ativo").value(false));
+
+        assertFalse(repository.findById(id).orElseThrow().isAtivo());
+    }
+
+    @Test
+    void deveRetornar404AoAlterarStatusDeFuncionarioInexistente()
+            throws Exception {
+        mockMvc.perform(patch("/funcionarios/{id}/ativo", 999999L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "ativo": false
+                            }
+                            """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.title")
+                        .value("Funcionário não encontrado"));
+    }
+
+    @Test
+    void deveRejeitarStatusAusente() throws Exception {
+        mockMvc.perform(patch("/funcionarios/{id}/ativo", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                            }
+                            """))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_PROBLEM_JSON
+                ))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.title").value("Dados inválidos"))
+                .andExpect(jsonPath("$.erros.ativo").isArray());
+    }
 }
