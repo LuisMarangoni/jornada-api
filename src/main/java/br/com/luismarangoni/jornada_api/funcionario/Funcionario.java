@@ -5,9 +5,15 @@ import java.util.Locale;
 public class Funcionario {
 
     private final String matricula;
-    private final String nome;
-    private final String email;
+    private String nome;
+    private String email;
     private final boolean ativo;
+
+    public void atualizarDados(String nome, String email) {
+        this.nome = exigirTexto(nome, "Nome");
+        this.email = exigirTexto(email, "E-mail")
+                .toLowerCase(Locale.ROOT);
+    }
 
     public Funcionario(
             String matricula,

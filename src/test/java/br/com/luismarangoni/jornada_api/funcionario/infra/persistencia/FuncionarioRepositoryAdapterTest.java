@@ -174,4 +174,29 @@ class FuncionarioRepositoryAdapterTest {
                 segundaPagina.conteudo().get(0).matricula());
     }
 
+    @Test
+    void deveAtualizarDadosDoFuncionarioPreservandoMatriculaEStatus() {
+        Long id = repository.salvar(new Funcionario(
+                "MAT-301",
+                "Ana Silva",
+                "ana@email.com"
+        ));
+
+        repository.atualizar(
+                id,
+                "Carlos Souza",
+                "carlos@email.com"
+        );
+
+        entityManager.clear();
+
+        FuncionarioJpaEntity atualizado = jpaRepository.findById(id)
+                .orElseThrow();
+
+        assertEquals("MAT-301", atualizado.getMatricula());
+        assertEquals("Carlos Souza", atualizado.getNome());
+        assertEquals("carlos@email.com", atualizado.getEmail());
+        assertTrue(atualizado.isAtivo());
+    }
+
 }

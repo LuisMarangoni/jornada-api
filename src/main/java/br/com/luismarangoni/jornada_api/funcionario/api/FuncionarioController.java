@@ -17,7 +17,9 @@ import br.com.luismarangoni.jornada_api.funcionario.api.dto.FuncionarioResponse;
 import br.com.luismarangoni.jornada_api.funcionario.api.dto.PaginaFuncionariosResponse;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.ListarFuncionarios;
 import org.springframework.web.bind.annotation.RequestParam;
-
+import br.com.luismarangoni.jornada_api.funcionario.api.dto.AtualizarFuncionarioRequest;
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.AtualizarFuncionario;
+import org.springframework.web.bind.annotation.PutMapping;
 
 
 @RestController
@@ -27,15 +29,18 @@ public class FuncionarioController {
     private final CadastrarFuncionario cadastrarFuncionario;
     private final BuscarFuncionario buscarFuncionario;
     private final ListarFuncionarios listarFuncionarios;
+    private final AtualizarFuncionario atualizarFuncionario;
 
     public FuncionarioController(
             CadastrarFuncionario cadastrarFuncionario,
             BuscarFuncionario buscarFuncionario,
-            ListarFuncionarios listarFuncionarios
+            ListarFuncionarios listarFuncionarios,
+            AtualizarFuncionario atualizarFuncionario
     ) {
         this.cadastrarFuncionario = cadastrarFuncionario;
         this.buscarFuncionario = buscarFuncionario;
         this.listarFuncionarios = listarFuncionarios;
+        this.atualizarFuncionario = atualizarFuncionario;
     }
 
     @PostMapping
@@ -50,6 +55,20 @@ public class FuncionarioController {
         );
 
         return new FuncionarioCriadoResponse(id);
+    }
+
+    @PutMapping("/{id}")
+    public FuncionarioResponse atualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody AtualizarFuncionarioRequest request
+    ) {
+        return FuncionarioResponse.from(
+                atualizarFuncionario.executar(
+                        id,
+                        request.nome(),
+                        request.email()
+                )
+        );
     }
 
     @GetMapping("/{id}")

@@ -30,6 +30,11 @@ public class FuncionarioJpaEntity {
     protected FuncionarioJpaEntity() {
     }
 
+    public void atualizarDados(String nome, String email) {
+        this.nome = nome;
+        this.email = email;
+    }
+
     public FuncionarioJpaEntity(
             String matricula,
             String nome,

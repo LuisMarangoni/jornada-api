@@ -14,6 +14,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -208,6 +210,80 @@ class FuncionarioControllerTest {
                         .param("tamanho", "101"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Parâmetro inválido"));
+    }
+
+    @Test
+    void deveAtualizarFuncionario() throws Exception {
+        mockMvc.perform(post("/funcionarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "matricula": "MAT-501",
+                              "nome": "Ana Silva",
+                              "email": "ana@email.com"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        Long id = repository.findByMatricula("MAT-501")
+                .orElseThrow()
+                .getId();
+
+        mockMvc.perform(put("/funcionarios/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "nome": "Bruno Souza",
+                              "email": "BRUNO@EMAIL.COM"
+                            }
+                            """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.matricula").value("MAT-501"))
+                .andExpect(jsonPath("$.nome").value("Bruno Souza"))
+                .andExpect(jsonPath("$.email").value("bruno@email.com"))
+                .andExpect(jsonPath("$.ativo").value(true));
+
+        var salvo = repository.findById(id).orElseThrow();
+        assertEquals("Bruno Souza", salvo.getNome());
+        assertEquals("bruno@email.com", salvo.getEmail());
+    }
+
+    @Test
+    void deveRetornar404AoAtualizarFuncionarioInexistente()
+            throws Exception {
+        mockMvc.perform(put("/funcionarios/{id}", 999999L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "nome": "Bruno Souza",
+                              "email": "bruno@email.com"
+                            }
+                            """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.title")
+                        .value("Funcionário não encontrado"));
+    }
+
+    @Test
+    void deveRejeitarDadosInvalidosNaAtualizacao() throws Exception {
+        mockMvc.perform(put("/funcionarios/{id}", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "nome": "",
+                              "email": "email-invalido"
+                            }
+                            """))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_PROBLEM_JSON
+                ))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.title").value("Dados inválidos"))
+                .andExpect(jsonPath("$.erros.nome").isArray())
+                .andExpect(jsonPath("$.erros.email").isArray());
     }
 
 }

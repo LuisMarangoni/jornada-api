@@ -8,6 +8,8 @@ import java.util.Optional;
 
 public interface FuncionarioRepository {
 
+    void atualizar(Long id, String nome, String email);
+
     boolean existePorMatricula(String matricula);
 
     Long salvar(Funcionario funcionario);

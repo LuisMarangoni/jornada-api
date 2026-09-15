@@ -70,4 +70,24 @@ class FuncionarioTest {
 
         assertEquals("E-mail é obrigatório", erro.getMessage());
     }
+
+    @Test
+    void deveAtualizarNomeEEmailMantendoMatriculaEAtivo() {
+        Funcionario funcionario = new Funcionario(
+                "MAT-001",
+                "Ana Silva",
+                "ana@email.com"
+        );
+
+        funcionario.atualizarDados(
+                "  Carlos Souza  ",
+                "  CARLOS@EMAIL.COM  "
+        );
+
+        assertEquals("MAT-001", funcionario.getMatricula());
+        assertEquals("Carlos Souza", funcionario.getNome());
+        assertEquals("carlos@email.com", funcionario.getEmail());
+        assertTrue(funcionario.isAtivo());
+    }
+
 }

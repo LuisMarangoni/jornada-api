@@ -1,7 +1,7 @@
 package br.com.luismarangoni.jornada_api.funcionario.infra.configuracao;
 
 
-
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.AtualizarFuncionario;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.BuscarFuncionario;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.CadastrarFuncionario;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.porta.FuncionarioRepository;
@@ -34,6 +34,13 @@ public class FuncionarioConfiguration {
             FuncionarioRepository repository
     ) {
         return new ListarFuncionarios(repository);
+    }
+
+    @Bean
+    public AtualizarFuncionario atualizarFuncionario(
+            FuncionarioRepository repository
+    ) {
+        return new AtualizarFuncionario(repository);
     }
 
 }

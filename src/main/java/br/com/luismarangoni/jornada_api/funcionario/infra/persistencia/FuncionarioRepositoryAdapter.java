@@ -10,7 +10,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioConsulta;
 import java.util.Optional;
-
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioNaoEncontradoException;
 
 @Repository
 public class FuncionarioRepositoryAdapter
@@ -117,6 +117,15 @@ public class FuncionarioRepositoryAdapter
                 resultado.getTotalElements(),
                 resultado.getTotalPages()
         );
+    }
+
+    @Override
+    public void atualizar(Long id, String nome, String email) {
+        FuncionarioJpaEntity entidade = jpaRepository.findById(id)
+                .orElseThrow(() -> new FuncionarioNaoEncontradoException(id));
+
+        entidade.atualizarDados(nome, email);
+        jpaRepository.saveAndFlush(entidade);
     }
 
 }
