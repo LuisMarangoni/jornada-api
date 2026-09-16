@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-
+import org.springframework.http.HttpMethod;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -65,6 +65,32 @@ public class SegurancaConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/funcionarios"
+                        ).hasAnyRole("SUPORTE", "ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/funcionarios/*"
+                        ).hasAnyRole("SUPORTE", "ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/funcionarios/*/ativo"
+                        ).hasAnyRole("SUPORTE", "ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/funcionarios/**"
+                        ).authenticated()
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/funcionarios/*/marcacoes"
+                        ).authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
