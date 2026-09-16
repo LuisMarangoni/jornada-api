@@ -681,7 +681,108 @@ class FuncionarioControllerTest {
                         .value("Funcionário não encontrado"));
     }
 
+    @Test
+    void deveVincularUsuarioAoFuncionario() throws Exception {
+        var funcionario = repository.saveAndFlush(
+                new br.com.luismarangoni.jornada_api.funcionario
+                        .infra.persistencia.FuncionarioJpaEntity(
+                        "MAT-1401",
+                        "Ana Silva",
+                        "ana1401@email.com",
+                        true
+                )
+        );
 
+        mockMvc.perform(patch(
+                        "/funcionarios/{funcionarioId}/usuario",
+                        funcionario.getId()
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "usuarioId": 701
+                            }
+                            """))
+                .andExpect(status().isNoContent());
 
+        assertEquals(
+                701L,
+                repository.findById(funcionario.getId())
+                        .orElseThrow()
+                        .getUsuarioId()
+        );
+    }
 
+    @Test
+    void deveRejeitarUsuarioJaVinculado() throws Exception {
+        var primeiro = repository.saveAndFlush(
+                new br.com.luismarangoni.jornada_api.funcionario
+                        .infra.persistencia.FuncionarioJpaEntity(
+                        "MAT-1402",
+                        "Bruno Souza",
+                        "bruno1402@email.com",
+                        true,
+                        702L
+                )
+        );
+
+        var segundo = repository.saveAndFlush(
+                new br.com.luismarangoni.jornada_api.funcionario
+                        .infra.persistencia.FuncionarioJpaEntity(
+                        "MAT-1403",
+                        "Carla Lima",
+                        "carla1403@email.com",
+                        true
+                )
+        );
+
+        mockMvc.perform(patch(
+                        "/funcionarios/{funcionarioId}/usuario",
+                        segundo.getId()
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "usuarioId": 702
+                            }
+                            """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.title")
+                        .value("Usuário já vinculado"));
+
+        assertEquals(
+                702L,
+                repository.findById(primeiro.getId())
+                        .orElseThrow()
+                        .getUsuarioId()
+        );
+    }
+
+    @Test
+    void deveRejeitarUsuarioInvalidoNoVinculo() throws Exception {
+        var funcionario = repository.saveAndFlush(
+                new br.com.luismarangoni.jornada_api.funcionario
+                        .infra.persistencia.FuncionarioJpaEntity(
+                        "MAT-1404",
+                        "Diego Alves",
+                        "diego1404@email.com",
+                        true
+                )
+        );
+
+        mockMvc.perform(patch(
+                        "/funcionarios/{funcionarioId}/usuario",
+                        funcionario.getId()
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "usuarioId": 0
+                            }
+                            """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.erros.usuarioId").isArray());
+    }
 }

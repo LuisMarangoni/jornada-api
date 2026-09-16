@@ -112,4 +112,62 @@ class SegurancaControllerTest {
                 )
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void deveNegarVinculoParaUsuarioComum()
+            throws Exception {
+        mockMvc.perform(
+                        patch("/funcionarios/{id}/usuario", 999999L)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "usuarioId": 501
+                                    }
+                                    """)
+                                .with(jwt()
+                                        .authorities(
+                                                new SimpleGrantedAuthority(
+                                                        "ROLE_USUARIO"
+                                                )
+                                        )
+                                        .jwt(token -> token
+                                                .subject("1")
+                                                .claim(
+                                                        "perfis",
+                                                        java.util.List.of(
+                                                                "USUARIO"
+                                                        )
+                                                )))
+                )
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void devePermitirVinculoParaSuporte()
+            throws Exception {
+        mockMvc.perform(
+                        patch("/funcionarios/{id}/usuario", 999999L)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "usuarioId": 501
+                                    }
+                                    """)
+                                .with(jwt()
+                                        .authorities(
+                                                new SimpleGrantedAuthority(
+                                                        "ROLE_SUPORTE"
+                                                )
+                                        )
+                                        .jwt(token -> token
+                                                .subject("2")
+                                                .claim(
+                                                        "perfis",
+                                                        java.util.List.of(
+                                                                "SUPORTE"
+                                                        )
+                                                )))
+                )
+                .andExpect(status().isNotFound());
+    }
 }

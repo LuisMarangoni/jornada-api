@@ -27,6 +27,9 @@ public class FuncionarioJpaEntity {
     @Column(nullable = false)
     private boolean ativo;
 
+    @Column(name = "usuario_id", unique = true)
+    private Long usuarioId;
+
     protected FuncionarioJpaEntity() {
     }
 
@@ -39,17 +42,36 @@ public class FuncionarioJpaEntity {
         this.email = email;
     }
 
+
     public FuncionarioJpaEntity(
             String matricula,
             String nome,
             String email,
             boolean ativo
     ) {
+        this(
+                matricula,
+                nome,
+                email,
+                ativo,
+                null
+        );
+    }
+
+    public FuncionarioJpaEntity(
+            String matricula,
+            String nome,
+            String email,
+            boolean ativo,
+            Long usuarioId
+    ) {
         this.matricula = matricula;
         this.nome = nome;
         this.email = email;
         this.ativo = ativo;
+        this.usuarioId = usuarioId;
     }
+
 
     public Long getId() {
         return id;
@@ -70,4 +92,19 @@ public class FuncionarioJpaEntity {
     public boolean isAtivo() {
         return ativo;
     }
+
+    public Long getUsuarioId() {
+        return usuarioId;
+    }
+
+    public void vincularUsuario(Long usuarioId) {
+        if (usuarioId == null || usuarioId <= 0) {
+            throw new IllegalArgumentException(
+                    "O usuário deve possuir um ID válido"
+            );
+        }
+
+        this.usuarioId = usuarioId;
+    }
+
 }

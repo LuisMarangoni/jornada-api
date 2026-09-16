@@ -14,7 +14,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioNaoEncontradoException;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioInativoException;
 import br.com.luismarangoni.jornada_api.marcacao.aplicacao.SequenciaMarcacaoInvalidaException;
-
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.UsuarioJaVinculadoException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -125,6 +125,20 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler {
         );
 
         problema.setTitle("Sequência de marcação inválida");
+
+        return problema;
+    }
+
+    @ExceptionHandler(UsuarioJaVinculadoException.class)
+    public ProblemDetail tratarUsuarioJaVinculado(
+            UsuarioJaVinculadoException exception
+    ) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                exception.getMessage()
+        );
+
+        problema.setTitle("Usuário já vinculado");
 
         return problema;
     }

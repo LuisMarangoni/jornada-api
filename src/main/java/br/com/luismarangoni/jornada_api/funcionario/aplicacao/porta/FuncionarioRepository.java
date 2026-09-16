@@ -9,12 +9,15 @@ import java.util.Optional;
 public interface FuncionarioRepository {
 
     void atualizar(Long id, String nome, String email);
+
     void atualizarStatus(Long id, boolean ativo);
+
+    void vincularUsuario(Long funcionarioId, Long usuarioId);
 
     boolean existePorMatricula(String matricula);
 
     Long salvar(Funcionario funcionario);
-
     PaginaFuncionarios listar(int pagina, int tamanho);
     Optional<FuncionarioConsulta> buscarPorId(Long id);
+    Optional<FuncionarioConsulta> buscarPorUsuarioId(Long usuarioId);
 }

@@ -52,6 +52,8 @@ public class FuncionarioRepositoryAdapter
         }
     }
 
+
+
     @Override
     public Optional<FuncionarioConsulta> buscarPorId(Long id) {
         return jpaRepository.findById(id)
@@ -134,6 +136,35 @@ public class FuncionarioRepositoryAdapter
                 .orElseThrow(() -> new FuncionarioNaoEncontradoException(id));
 
         entidade.alterarStatus(ativo);
+        jpaRepository.saveAndFlush(entidade);
+    }
+
+    @Override
+    public Optional<FuncionarioConsulta> buscarPorUsuarioId(Long usuarioId) {
+        return jpaRepository.findByUsuarioId(usuarioId)
+                .map(entidade -> new FuncionarioConsulta(
+                        entidade.getId(),
+                        entidade.getMatricula(),
+                        entidade.getNome(),
+                        entidade.getEmail(),
+                        entidade.isAtivo()
+                ));
+    }
+
+    @Override
+    public void vincularUsuario(
+            Long funcionarioId,
+            Long usuarioId
+    ) {
+        FuncionarioJpaEntity entidade = jpaRepository
+                .findById(funcionarioId)
+                .orElseThrow(
+                        () -> new FuncionarioNaoEncontradoException(
+                                funcionarioId
+                        )
+                );
+
+        entidade.vincularUsuario(usuarioId);
         jpaRepository.saveAndFlush(entidade);
     }
 

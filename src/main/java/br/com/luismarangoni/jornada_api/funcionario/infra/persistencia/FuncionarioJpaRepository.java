@@ -12,5 +12,6 @@ public interface FuncionarioJpaRepository
 
     Page<FuncionarioJpaEntity> findAllByOrderByIdAsc(Pageable pageable);
     Optional<FuncionarioJpaEntity> findByMatricula(String matricula);
+    Optional<FuncionarioJpaEntity> findByUsuarioId(Long usuarioId);
 
 }

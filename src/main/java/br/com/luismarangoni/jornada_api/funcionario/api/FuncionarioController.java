@@ -30,7 +30,8 @@ import br.com.luismarangoni.jornada_api.marcacao.aplicacao.ListarMarcacoesFuncio
 import br.com.luismarangoni.jornada_api.marcacao.api.dto.ResumoJornadaResponse;
 import br.com.luismarangoni.jornada_api.marcacao.apuracao.ApurarJornadaFuncionario;
 import java.util.List;
-
+import br.com.luismarangoni.jornada_api.funcionario.api.dto.VincularUsuarioRequest;
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.VincularUsuarioFuncionario;
 
 
 
@@ -46,6 +47,7 @@ public class FuncionarioController {
     private final RegistrarMarcacao registrarMarcacao;
     private final ListarMarcacoesFuncionario listarMarcacoesFuncionario;
     private final ApurarJornadaFuncionario apurarJornadaFuncionario;
+    private final VincularUsuarioFuncionario vincularUsuarioFuncionario;
 
     public FuncionarioController(
             CadastrarFuncionario cadastrarFuncionario,
@@ -55,7 +57,8 @@ public class FuncionarioController {
             AlterarStatusFuncionario alterarStatusFuncionario,
             RegistrarMarcacao registrarMarcacao,
             ListarMarcacoesFuncionario listarMarcacoesFuncionario,
-            ApurarJornadaFuncionario apurarJornadaFuncionario
+            ApurarJornadaFuncionario apurarJornadaFuncionario,
+            VincularUsuarioFuncionario vincularUsuarioFuncionario
     ) {
         this.cadastrarFuncionario = cadastrarFuncionario;
         this.buscarFuncionario = buscarFuncionario;
@@ -65,6 +68,7 @@ public class FuncionarioController {
         this.registrarMarcacao = registrarMarcacao;
         this.listarMarcacoesFuncionario = listarMarcacoesFuncionario;
         this.apurarJornadaFuncionario = apurarJornadaFuncionario;
+        this.vincularUsuarioFuncionario = vincularUsuarioFuncionario;
     }
 
     @PostMapping
@@ -153,6 +157,18 @@ public class FuncionarioController {
         return ResumoJornadaResponse.from(
                 funcionarioId,
                 apurarJornadaFuncionario.executar(funcionarioId)
+        );
+    }
+
+    @PatchMapping("/{funcionarioId}/usuario")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void vincularUsuario(
+            @PathVariable Long funcionarioId,
+            @Valid @RequestBody VincularUsuarioRequest request
+    ) {
+        vincularUsuarioFuncionario.executar(
+                funcionarioId,
+                request.usuarioId()
         );
     }
 

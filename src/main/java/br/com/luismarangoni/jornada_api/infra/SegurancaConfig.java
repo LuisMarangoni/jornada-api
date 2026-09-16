@@ -82,6 +82,11 @@ public class SegurancaConfig {
                         ).hasAnyRole("SUPORTE", "ADMIN")
 
                         .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/funcionarios/*/usuario"
+                        ).hasAnyRole("SUPORTE", "ADMIN")
+
+                        .requestMatchers(
                                 HttpMethod.GET,
                                 "/funcionarios/**"
                         ).authenticated()

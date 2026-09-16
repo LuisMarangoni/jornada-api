@@ -1,6 +1,6 @@
 package br.com.luismarangoni.jornada_api.funcionario.infra.configuracao;
 
-
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.VincularUsuarioFuncionario;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.AtualizarFuncionario;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.BuscarFuncionario;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.CadastrarFuncionario;
@@ -95,6 +95,13 @@ public class FuncionarioConfiguration {
                 marcacaoRepository,
                 apurador
         );
+    }
+
+    @Bean
+    public VincularUsuarioFuncionario vincularUsuarioFuncionario(
+            FuncionarioRepository repository
+    ) {
+        return new VincularUsuarioFuncionario(repository);
     }
 
 }

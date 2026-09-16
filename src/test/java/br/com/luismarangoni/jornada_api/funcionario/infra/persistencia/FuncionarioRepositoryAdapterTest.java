@@ -219,4 +219,54 @@ class FuncionarioRepositoryAdapterTest {
         assertEquals("Ana Silva", atualizado.getNome());
         assertEquals("ana@email.com", atualizado.getEmail());
     }
+
+    @Test
+    void deveConsultarFuncionarioPorUsuarioId() {
+        FuncionarioJpaEntity salvo = jpaRepository.saveAndFlush(
+                new FuncionarioJpaEntity(
+                        "MAT-1201",
+                        "Ana Silva",
+                        "ana1201@email.com",
+                        true,
+                        501L
+                )
+        );
+
+        entityManager.clear();
+
+        FuncionarioConsulta encontrado =
+                repository.buscarPorUsuarioId(501L)
+                        .orElseThrow();
+
+        assertEquals(salvo.getId(), encontrado.id());
+        assertEquals("MAT-1201", encontrado.matricula());
+        assertEquals("Ana Silva", encontrado.nome());
+    }
+
+    @Test
+    void deveVincularUsuarioAoFuncionario() {
+        FuncionarioJpaEntity funcionario =
+                jpaRepository.saveAndFlush(
+                        new FuncionarioJpaEntity(
+                                "MAT-1301",
+                                "Ana Silva",
+                                "ana1301@email.com",
+                                true
+                        )
+                );
+
+        repository.vincularUsuario(
+                funcionario.getId(),
+                601L
+        );
+
+        entityManager.clear();
+
+        FuncionarioJpaEntity atualizado =
+                jpaRepository.findById(funcionario.getId())
+                        .orElseThrow();
+
+        assertEquals(601L, atualizado.getUsuarioId());
+    }
+
 }
