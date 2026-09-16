@@ -11,7 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
+import java.util.List;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -112,6 +112,64 @@ class RegistrarMarcacaoTest {
         );
 
         verifyNoInteractions(marcacaoRepository);
+    }
+
+    @Test
+    void deveExigirEntradaComoPrimeiraMarcacao() {
+        when(funcionarioRepository.buscarPorId(1L))
+                .thenReturn(Optional.of(new FuncionarioConsulta(
+                        1L,
+                        "MAT-001",
+                        "Ana Silva",
+                        "ana@email.com",
+                        true
+                )));
+
+        RegistrarMarcacao registrar = new RegistrarMarcacao(
+                funcionarioRepository,
+                marcacaoRepository,
+                Clock.systemUTC()
+        );
+
+        assertThrows(
+                SequenciaMarcacaoInvalidaException.class,
+                () -> registrar.executar(1L, TipoMarcacao.SAIDA)
+        );
+
+        verify(marcacaoRepository, never()).salvar(any());
+    }
+
+    @Test
+    void deveRejeitarDuasEntradasConsecutivas() {
+        when(funcionarioRepository.buscarPorId(1L))
+                .thenReturn(Optional.of(new FuncionarioConsulta(
+                        1L,
+                        "MAT-001",
+                        "Ana Silva",
+                        "ana@email.com",
+                        true
+                )));
+
+        when(marcacaoRepository.listarPorFuncionario(1L))
+                .thenReturn(List.of(new MarcacaoConsulta(
+                        10L,
+                        1L,
+                        TipoMarcacao.ENTRADA,
+                        Instant.parse("2026-09-15T08:00:00Z")
+                )));
+
+        RegistrarMarcacao registrar = new RegistrarMarcacao(
+                funcionarioRepository,
+                marcacaoRepository,
+                Clock.systemUTC()
+        );
+
+        assertThrows(
+                SequenciaMarcacaoInvalidaException.class,
+                () -> registrar.executar(1L, TipoMarcacao.ENTRADA)
+        );
+
+        verify(marcacaoRepository, never()).salvar(any());
     }
 
 }

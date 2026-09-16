@@ -13,7 +13,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioNaoEncontradoException;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioInativoException;
-
+import br.com.luismarangoni.jornada_api.marcacao.aplicacao.SequenciaMarcacaoInvalidaException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -111,6 +111,20 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler {
         );
 
         problema.setTitle("Funcionário inativo");
+
+        return problema;
+    }
+
+    @ExceptionHandler(SequenciaMarcacaoInvalidaException.class)
+    public ProblemDetail tratarSequenciaInvalida(
+            SequenciaMarcacaoInvalidaException exception
+    ) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                exception.getMessage()
+        );
+
+        problema.setTitle("Sequência de marcação inválida");
 
         return problema;
     }

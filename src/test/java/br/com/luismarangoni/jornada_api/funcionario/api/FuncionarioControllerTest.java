@@ -505,4 +505,86 @@ class FuncionarioControllerTest {
                         .value("Funcionário não encontrado"));
     }
 
+    @Test
+    void deveRejeitarSaidaComoPrimeiraMarcacao() throws Exception {
+        mockMvc.perform(post("/funcionarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "matricula": "MAT-1001",
+                              "nome": "Ana Silva",
+                              "email": "ana1001@email.com"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        Long funcionarioId = repository.findByMatricula("MAT-1001")
+                .orElseThrow()
+                .getId();
+
+        mockMvc.perform(post(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        funcionarioId
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "tipo": "SAIDA"
+                            }
+                            """))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_PROBLEM_JSON
+                ))
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.title")
+                        .value("Sequência de marcação inválida"));
+    }
+
+    @Test
+    void deveRejeitarEntradasConsecutivas() throws Exception {
+        mockMvc.perform(post("/funcionarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "matricula": "MAT-1002",
+                              "nome": "Bruno Souza",
+                              "email": "bruno1002@email.com"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        Long funcionarioId = repository.findByMatricula("MAT-1002")
+                .orElseThrow()
+                .getId();
+
+        mockMvc.perform(post(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        funcionarioId
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "tipo": "ENTRADA"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        funcionarioId
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "tipo": "ENTRADA"
+                            }
+                            """))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.title")
+                        .value("Sequência de marcação inválida"));
+    }
+
+
 }

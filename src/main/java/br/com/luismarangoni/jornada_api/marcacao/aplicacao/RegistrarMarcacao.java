@@ -1,8 +1,8 @@
 package br.com.luismarangoni.jornada_api.marcacao.aplicacao;
 
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioConsulta;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioInativoException;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioNaoEncontradoException;
-import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioConsulta;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.porta.FuncionarioRepository;
 import br.com.luismarangoni.jornada_api.marcacao.MarcacaoPonto;
 import br.com.luismarangoni.jornada_api.marcacao.TipoMarcacao;
@@ -26,7 +26,10 @@ public class RegistrarMarcacao {
         this.clock = clock;
     }
 
-    public MarcacaoConsulta executar(Long funcionarioId, TipoMarcacao tipo) {
+    public MarcacaoConsulta executar(
+            Long funcionarioId,
+            TipoMarcacao tipo
+    ) {
         FuncionarioConsulta funcionario =
                 funcionarioRepository.buscarPorId(funcionarioId)
                         .orElseThrow(
@@ -38,6 +41,8 @@ public class RegistrarMarcacao {
         if (!funcionario.ativo()) {
             throw new FuncionarioInativoException(funcionarioId);
         }
+
+        validarSequencia(funcionarioId, tipo);
 
         MarcacaoPonto marcacao = new MarcacaoPonto(
                 funcionarioId,
@@ -53,5 +58,54 @@ public class RegistrarMarcacao {
                 tipo,
                 marcacao.getOcorridaEm()
         );
+    }
+
+    private void validarSequencia(
+            Long funcionarioId,
+            TipoMarcacao novaMarcacao
+    ) {
+        var anteriores = marcacaoRepository
+                .listarPorFuncionario(funcionarioId);
+
+        if (anteriores.isEmpty()) {
+            if (novaMarcacao != TipoMarcacao.ENTRADA) {
+                throw new SequenciaMarcacaoInvalidaException(
+                        funcionarioId,
+                        "a primeira marcação deve ser ENTRADA"
+                );
+            }
+
+            return;
+        }
+
+        TipoMarcacao ultimaMarcacao = anteriores
+                .get(anteriores.size() - 1)
+                .tipo();
+
+        boolean permitida = switch (ultimaMarcacao) {
+            case ENTRADA ->
+                    novaMarcacao == TipoMarcacao.INICIO_INTERVALO
+                            || novaMarcacao == TipoMarcacao.SAIDA;
+
+            case INICIO_INTERVALO ->
+                    novaMarcacao == TipoMarcacao.FIM_INTERVALO;
+
+            case FIM_INTERVALO ->
+                    novaMarcacao == TipoMarcacao.INICIO_INTERVALO
+                            || novaMarcacao == TipoMarcacao.SAIDA;
+
+            case SAIDA ->
+                    novaMarcacao == TipoMarcacao.ENTRADA;
+        };
+
+        if (!permitida) {
+            throw new SequenciaMarcacaoInvalidaException(
+                    funcionarioId,
+                    "não é permitido registrar "
+                            + novaMarcacao
+                            + " após "
+                            + ultimaMarcacao
+            );
+        }
     }
 }

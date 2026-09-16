@@ -19,7 +19,7 @@ Projeto de portfólio em desenvolvimento para gestão de funcionários e jornada
 - Endpoint `POST /funcionarios` com DTOs em records e validação da entrada.
 - Endpoint `GET /funcionarios/{id}` com DTO de resposta e tratamento de inexistência.
 - Erros HTTP de validação e matrícula duplicada padronizados com `ProblemDetail`.
-- 63 testes: 16 cenários de domínio, 20 do controller HTTP, 9 do adaptador, 3 do cadastro, 2 da consulta, 2 da listagem, 2 da atualização, 2 da alteração de status, 3 do registro de marcação, 2 da consulta de marcações, 2 do repositório JPA e 1 de contexto Spring.
+- 68 testes: 12 cenários do domínio de funcionário, 4 do domínio de marcação, 22 do controller HTTP, 9 do adaptador, 3 do cadastro, 2 da consulta, 2 da listagem, 2 da atualização, 2 da alteração de status, 5 do registro de marcação, 2 da consulta de marcações, 2 do repositório JPA e 1 de contexto Spring.
 - GitHub Actions executa a suíte com Java 21 em pushes e pull requests para `main`.
 
 O cadastro, a consulta por ID, a atualização, a alteração de status, a listagem paginada e o registro/consulta de marcações estão disponíveis por HTTP. Ainda não há autenticação ou apuração de jornada. O DTO de entrada valida formato de e-mail e limites de tamanho; o domínio mantém suas próprias verificações de campos obrigatórios e normalização. A unicidade da matrícula é garantida no PostgreSQL e traduzida para conflito HTTP. IDs inexistentes e parâmetros de paginação inválidos retornam `ProblemDetail`.
@@ -217,7 +217,7 @@ Para consultar o histórico:
 GET http://localhost:8082/funcionarios/1/marcacoes
 ```
 
-A resposta retorna uma lista ordenada pelo horário da ocorrência. A validação de sequência das marcações e a apuração de horas serão adicionadas em etapas posteriores.
+A resposta retorna uma lista ordenada pelo horário da ocorrência. A sequência permitida é `ENTRADA` → `INICIO_INTERVALO` ou `SAIDA`, `INICIO_INTERVALO` → `FIM_INTERVALO`, `FIM_INTERVALO` → `INICIO_INTERVALO` ou `SAIDA`, e `SAIDA` → `ENTRADA`. A primeira marcação deve ser `ENTRADA`; sequências inválidas retornam `422`. A apuração de horas será adicionada em etapa posterior.
 
 Teste manual no PowerShell, em um segundo terminal:
 
