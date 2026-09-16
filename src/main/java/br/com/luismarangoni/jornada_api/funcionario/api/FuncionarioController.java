@@ -27,7 +27,8 @@ import br.com.luismarangoni.jornada_api.marcacao.api.dto.MarcacaoResponse;
 import br.com.luismarangoni.jornada_api.marcacao.api.dto.RegistrarMarcacaoRequest;
 import br.com.luismarangoni.jornada_api.marcacao.aplicacao.RegistrarMarcacao;
 import br.com.luismarangoni.jornada_api.marcacao.aplicacao.ListarMarcacoesFuncionario;
-
+import br.com.luismarangoni.jornada_api.marcacao.api.dto.ResumoJornadaResponse;
+import br.com.luismarangoni.jornada_api.marcacao.apuracao.ApurarJornadaFuncionario;
 import java.util.List;
 
 
@@ -44,6 +45,7 @@ public class FuncionarioController {
     private final AlterarStatusFuncionario alterarStatusFuncionario;
     private final RegistrarMarcacao registrarMarcacao;
     private final ListarMarcacoesFuncionario listarMarcacoesFuncionario;
+    private final ApurarJornadaFuncionario apurarJornadaFuncionario;
 
     public FuncionarioController(
             CadastrarFuncionario cadastrarFuncionario,
@@ -52,7 +54,8 @@ public class FuncionarioController {
             AtualizarFuncionario atualizarFuncionario,
             AlterarStatusFuncionario alterarStatusFuncionario,
             RegistrarMarcacao registrarMarcacao,
-            ListarMarcacoesFuncionario listarMarcacoesFuncionario
+            ListarMarcacoesFuncionario listarMarcacoesFuncionario,
+            ApurarJornadaFuncionario apurarJornadaFuncionario
     ) {
         this.cadastrarFuncionario = cadastrarFuncionario;
         this.buscarFuncionario = buscarFuncionario;
@@ -61,6 +64,7 @@ public class FuncionarioController {
         this.alterarStatusFuncionario = alterarStatusFuncionario;
         this.registrarMarcacao = registrarMarcacao;
         this.listarMarcacoesFuncionario = listarMarcacoesFuncionario;
+        this.apurarJornadaFuncionario = apurarJornadaFuncionario;
     }
 
     @PostMapping
@@ -139,6 +143,16 @@ public class FuncionarioController {
                         funcionarioId,
                         request.tipo()
                 )
+        );
+    }
+
+    @GetMapping("/{funcionarioId}/jornada/resumo")
+    public ResumoJornadaResponse resumirJornada(
+            @PathVariable Long funcionarioId
+    ) {
+        return ResumoJornadaResponse.from(
+                funcionarioId,
+                apurarJornadaFuncionario.executar(funcionarioId)
         );
     }
 

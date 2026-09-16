@@ -15,7 +15,8 @@ import br.com.luismarangoni.jornada_api.marcacao.aplicacao.ListarMarcacoesFuncio
 import br.com.luismarangoni.jornada_api.marcacao.aplicacao.RegistrarMarcacao;
 import br.com.luismarangoni.jornada_api.marcacao.aplicacao.porta.MarcacaoPontoRepository;
 import java.time.Clock;
-
+import br.com.luismarangoni.jornada_api.marcacao.apuracao.ApuradorJornada;
+import br.com.luismarangoni.jornada_api.marcacao.apuracao.ApurarJornadaFuncionario;
 
 @Configuration(proxyBeanMethods = false)
 public class FuncionarioConfiguration {
@@ -75,6 +76,24 @@ public class FuncionarioConfiguration {
         return new ListarMarcacoesFuncionario(
                 funcionarioRepository,
                 marcacaoRepository
+        );
+    }
+
+    @Bean
+    public ApuradorJornada apuradorJornada() {
+        return new ApuradorJornada();
+    }
+
+    @Bean
+    public ApurarJornadaFuncionario apurarJornadaFuncionario(
+            FuncionarioRepository funcionarioRepository,
+            MarcacaoPontoRepository marcacaoRepository,
+            ApuradorJornada apurador
+    ) {
+        return new ApurarJornadaFuncionario(
+                funcionarioRepository,
+                marcacaoRepository,
+                apurador
         );
     }
 

@@ -586,5 +586,93 @@ class FuncionarioControllerTest {
                         .value("Sequência de marcação inválida"));
     }
 
+    @Test
+    void deveConsultarResumoDaJornada() throws Exception {
+        mockMvc.perform(post("/funcionarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "matricula": "MAT-1101",
+                              "nome": "Ana Silva",
+                              "email": "ana1101@email.com"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        Long funcionarioId = repository.findByMatricula("MAT-1101")
+                .orElseThrow()
+                .getId();
+
+        mockMvc.perform(post(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        funcionarioId
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "tipo": "ENTRADA"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        funcionarioId
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "tipo": "INICIO_INTERVALO"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        funcionarioId
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "tipo": "FIM_INTERVALO"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post(
+                        "/funcionarios/{funcionarioId}/marcacoes",
+                        funcionarioId
+                )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "tipo": "SAIDA"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get(
+                        "/funcionarios/{funcionarioId}/jornada/resumo",
+                        funcionarioId
+                ))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.funcionarioId").value(funcionarioId))
+                .andExpect(jsonPath("$.minutosTrabalhados").isNumber())
+                .andExpect(jsonPath("$.minutosIntervalo").isNumber());
+    }
+
+    @Test
+    void deveRetornar404AoConsultarResumoDeFuncionarioInexistente()
+            throws Exception {
+        mockMvc.perform(get(
+                        "/funcionarios/{funcionarioId}/jornada/resumo",
+                        999999L
+                ))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.title")
+                        .value("Funcionário não encontrado"));
+    }
+
 
 }
