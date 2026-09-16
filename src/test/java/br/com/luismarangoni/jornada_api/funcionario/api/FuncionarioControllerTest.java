@@ -1,5 +1,9 @@
 package br.com.luismarangoni.jornada_api.funcionario.api;
 
+
+
+
+import org.springframework.security.test.context.support.WithMockUser;
 import br.com.luismarangoni.jornada_api.PostgresTestConfiguration;
 import br.com.luismarangoni.jornada_api.funcionario.infra.persistencia.FuncionarioJpaRepository;
 import org.junit.jupiter.api.Test;
@@ -17,8 +21,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 
+
+
+
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Import(PostgresTestConfiguration.class)
 @Transactional
 class FuncionarioControllerTest {
@@ -673,6 +680,8 @@ class FuncionarioControllerTest {
                 .andExpect(jsonPath("$.title")
                         .value("Funcionário não encontrado"));
     }
+
+
 
 
 }
