@@ -22,7 +22,7 @@ Projeto de portfólio em desenvolvimento para gestão de funcionários e jornada
 - 75 testes: 12 do domínio de funcionário, 7 do domínio de marcação/apuração, 24 do controller HTTP, 9 do adaptador, 3 do cadastro, 2 da consulta, 2 da listagem, 2 da atualização, 2 da alteração de status, 5 do registro de marcação, 2 da consulta de marcações, 2 da apuração, 2 do repositório JPA e 1 de contexto Spring.
 - GitHub Actions executa a suíte com Java 21 em pushes e pull requests para `main`.
 
-O cadastro, a consulta por ID, a atualização, a alteração de status, a listagem paginada e o registro/consulta de marcações estão disponíveis por HTTP. Ainda não há autenticação ou apuração de jornada. O DTO de entrada valida formato de e-mail e limites de tamanho; o domínio mantém suas próprias verificações de campos obrigatórios e normalização. A unicidade da matrícula é garantida no PostgreSQL e traduzida para conflito HTTP. IDs inexistentes e parâmetros de paginação inválidos retornam `ProblemDetail`.
+O cadastro, a consulta por ID, a atualização, a alteração de status, a listagem paginada, o registro/consulta de marcações e o resumo da jornada estão disponíveis por HTTP. Ainda não há autenticação. O DTO de entrada valida formato de e-mail e limites de tamanho; o domínio mantém suas próprias verificações de campos obrigatórios e normalização. A unicidade da matrícula é garantida no PostgreSQL e traduzida para conflito HTTP. IDs inexistentes e parâmetros de paginação inválidos retornam `ProblemDetail`.
 
 ## Separação de responsabilidades
 
