@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -264,6 +264,99 @@ class SegurancaControllerTest {
                                                                 "USUARIO"
                                                         )
                                                 )))
+                )
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deveNegarRegistroDeMarcacaoEmOutroFuncionario()
+            throws Exception {
+        var funcionario = funcionarioRepository.saveAndFlush(
+                new FuncionarioJpaEntity(
+                        "MAT-1601",
+                        "Bruno Souza",
+                        "bruno1601@email.com",
+                        true,
+                        902L
+                )
+        );
+
+        mockMvc.perform(
+                        post(
+                                "/funcionarios/{id}/marcacoes",
+                                funcionario.getId()
+                        )
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "tipo": "ENTRADA"
+                                    }
+                                    """)
+                                .with(jwt()
+                                        .authorities(
+                                                new SimpleGrantedAuthority(
+                                                        "ROLE_USUARIO"
+                                                )
+                                        )
+                                        .jwt(token -> token.subject("901")))
+                )
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deveNegarConsultaDeMarcacoesDeOutroFuncionario()
+            throws Exception {
+        var funcionario = funcionarioRepository.saveAndFlush(
+                new FuncionarioJpaEntity(
+                        "MAT-1602",
+                        "Carla Lima",
+                        "carla1602@email.com",
+                        true,
+                        902L
+                )
+        );
+
+        mockMvc.perform(
+                        get(
+                                "/funcionarios/{id}/marcacoes",
+                                funcionario.getId()
+                        )
+                                .with(jwt()
+                                        .authorities(
+                                                new SimpleGrantedAuthority(
+                                                        "ROLE_USUARIO"
+                                                )
+                                        )
+                                        .jwt(token -> token.subject("901")))
+                )
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deveNegarResumoDeOutroFuncionario()
+            throws Exception {
+        var funcionario = funcionarioRepository.saveAndFlush(
+                new FuncionarioJpaEntity(
+                        "MAT-1603",
+                        "Diego Alves",
+                        "diego1603@email.com",
+                        true,
+                        902L
+                )
+        );
+
+        mockMvc.perform(
+                        get(
+                                "/funcionarios/{id}/jornada/resumo",
+                                funcionario.getId()
+                        )
+                                .with(jwt()
+                                        .authorities(
+                                                new SimpleGrantedAuthority(
+                                                        "ROLE_USUARIO"
+                                                )
+                                        )
+                                        .jwt(token -> token.subject("901")))
                 )
                 .andExpect(status().isForbidden());
     }
