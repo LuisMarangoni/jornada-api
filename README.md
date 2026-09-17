@@ -227,6 +227,14 @@ Para consultar o resumo de uma jornada encerrada:
 GET http://localhost:8082/funcionarios/1/jornada/resumo
 ```
 
+É possível filtrar o resumo por uma data específica, no formato `yyyy-MM-dd`:
+
+```http
+GET http://localhost:8082/funcionarios/1/jornada/resumo?data=2026-09-17
+```
+
+Sem o parâmetro `data`, a API considera todas as marcações do funcionário. Com o parâmetro, considera somente o intervalo daquele dia (UTC).
+
 A resposta informa os minutos trabalhados e os minutos de intervalo:
 
 ```json

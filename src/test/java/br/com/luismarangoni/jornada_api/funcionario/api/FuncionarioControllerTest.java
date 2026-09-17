@@ -6,6 +6,9 @@ package br.com.luismarangoni.jornada_api.funcionario.api;
 import org.springframework.security.test.context.support.WithMockUser;
 import br.com.luismarangoni.jornada_api.PostgresTestConfiguration;
 import br.com.luismarangoni.jornada_api.funcionario.infra.persistencia.FuncionarioJpaRepository;
+import br.com.luismarangoni.jornada_api.marcacao.TipoMarcacao;
+import br.com.luismarangoni.jornada_api.marcacao.infra.persistencia.MarcacaoPontoJpaEntity;
+import br.com.luismarangoni.jornada_api.marcacao.infra.persistencia.MarcacaoPontoJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -43,6 +46,9 @@ class FuncionarioControllerTest {
 
     @Autowired
     private FuncionarioJpaRepository repository;
+
+    @Autowired
+    private MarcacaoPontoJpaRepository marcacaoRepository;
 
     @Test
     void deveCadastrarFuncionarioERetornar201() throws Exception {
@@ -784,5 +790,73 @@ class FuncionarioControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.erros.usuarioId").isArray());
+    }
+
+    @Test
+    void deveApurarResumoDaDataInformada() throws Exception {
+        var funcionario = repository.saveAndFlush(
+                new br.com.luismarangoni.jornada_api.funcionario
+                        .infra.persistencia.FuncionarioJpaEntity(
+                        "MAT-1801",
+                        "Ana Silva",
+                        "ana1801@email.com",
+                        true
+                )
+        );
+
+        Long funcionarioId = funcionario.getId();
+
+        marcacaoRepository.saveAndFlush(
+                new MarcacaoPontoJpaEntity(
+                        funcionarioId,
+                        TipoMarcacao.ENTRADA,
+                        java.time.Instant.parse(
+                                "2026-09-17T08:00:00Z"
+                        )
+                )
+        );
+
+        marcacaoRepository.saveAndFlush(
+                new MarcacaoPontoJpaEntity(
+                        funcionarioId,
+                        TipoMarcacao.INICIO_INTERVALO,
+                        java.time.Instant.parse(
+                                "2026-09-17T12:00:00Z"
+                        )
+                )
+        );
+
+        marcacaoRepository.saveAndFlush(
+                new MarcacaoPontoJpaEntity(
+                        funcionarioId,
+                        TipoMarcacao.FIM_INTERVALO,
+                        java.time.Instant.parse(
+                                "2026-09-17T13:00:00Z"
+                        )
+                )
+        );
+
+        marcacaoRepository.saveAndFlush(
+                new MarcacaoPontoJpaEntity(
+                        funcionarioId,
+                        TipoMarcacao.SAIDA,
+                        java.time.Instant.parse(
+                                "2026-09-17T17:00:00Z"
+                        )
+                )
+        );
+
+        mockMvc.perform(get(
+                        "/funcionarios/{id}/jornada/resumo",
+                        funcionarioId
+                )
+                        .param("data", "2026-09-17"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.funcionarioId")
+                        .value(funcionarioId))
+                .andExpect(jsonPath("$.minutosTrabalhados")
+                        .value(480))
+                .andExpect(jsonPath("$.minutosIntervalo")
+                        .value(60));
     }
 }

@@ -29,7 +29,6 @@ import br.com.luismarangoni.jornada_api.marcacao.aplicacao.RegistrarMarcacao;
 import br.com.luismarangoni.jornada_api.marcacao.aplicacao.ListarMarcacoesFuncionario;
 import br.com.luismarangoni.jornada_api.marcacao.api.dto.ResumoJornadaResponse;
 import br.com.luismarangoni.jornada_api.marcacao.apuracao.ApurarJornadaFuncionario;
-import java.util.List;
 import br.com.luismarangoni.jornada_api.funcionario.api.dto.VincularUsuarioRequest;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.VincularUsuarioFuncionario;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.ValidarAcessoFuncionario;
@@ -37,6 +36,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.List;
 
 @RestController
 @RequestMapping("/funcionarios")
@@ -173,14 +175,35 @@ public class FuncionarioController {
     @GetMapping("/{funcionarioId}/jornada/resumo")
     public ResumoJornadaResponse resumirJornada(
             @PathVariable Long funcionarioId,
+            @RequestParam(required = false) LocalDate data,
             @AuthenticationPrincipal Jwt jwt,
             Authentication authentication
     ) {
         validarAcesso(funcionarioId, jwt, authentication);
 
+        if (data == null) {
+            return ResumoJornadaResponse.from(
+                    funcionarioId,
+                    apurarJornadaFuncionario.executar(funcionarioId)
+            );
+        }
+
+        var inicio = data
+                .atStartOfDay()
+                .toInstant(ZoneOffset.UTC);
+
+        var fim = data
+                .plusDays(1)
+                .atStartOfDay()
+                .toInstant(ZoneOffset.UTC);
+
         return ResumoJornadaResponse.from(
                 funcionarioId,
-                apurarJornadaFuncionario.executar(funcionarioId)
+                apurarJornadaFuncionario.executar(
+                        funcionarioId,
+                        inicio,
+                        fim
+                )
         );
     }
 

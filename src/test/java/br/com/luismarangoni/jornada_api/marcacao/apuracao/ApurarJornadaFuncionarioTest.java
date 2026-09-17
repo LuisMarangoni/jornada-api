@@ -82,11 +82,58 @@ class ApurarJornadaFuncionarioTest {
             TipoMarcacao tipo,
             String horario
     ) {
+        String horarioCompleto = horario.contains("T")
+                ? horario
+                : "2026-09-15T" + horario;
+
         return new MarcacaoConsulta(
                 1L,
                 1L,
                 tipo,
-                Instant.parse("2026-09-15T" + horario)
+                Instant.parse(horarioCompleto)
+        );
+    }
+
+    @Test
+    void deveApurarJornadaDoPeriodoInformado() {
+        Instant inicio = Instant.parse("2026-09-17T00:00:00Z");
+        Instant fim = Instant.parse("2026-09-18T00:00:00Z");
+
+        when(funcionarioRepository.buscarPorId(1L))
+                .thenReturn(Optional.of(new FuncionarioConsulta(
+                        1L,
+                        "MAT-001",
+                        "Ana Silva",
+                        "ana@email.com",
+                        true
+                )));
+
+        when(marcacaoRepository.listarPorFuncionarioEPeriodo(
+                1L,
+                inicio,
+                fim
+        )).thenReturn(List.of(
+                marcacao(TipoMarcacao.ENTRADA, "2026-09-17T08:00:00Z"),
+                marcacao(TipoMarcacao.SAIDA, "2026-09-17T17:00:00Z")
+        ));
+
+        ApurarJornadaFuncionario apurar =
+                new ApurarJornadaFuncionario(
+                        funcionarioRepository,
+                        marcacaoRepository,
+                        new ApuradorJornada()
+                );
+
+        ResumoJornada resultado =
+                apurar.executar(1L, inicio, fim);
+
+        assertEquals(Duration.ofHours(9), resultado.tempoTrabalhado());
+        assertEquals(Duration.ZERO, resultado.tempoIntervalo());
+
+        verify(marcacaoRepository).listarPorFuncionarioEPeriodo(
+                1L,
+                inicio,
+                fim
         );
     }
 }

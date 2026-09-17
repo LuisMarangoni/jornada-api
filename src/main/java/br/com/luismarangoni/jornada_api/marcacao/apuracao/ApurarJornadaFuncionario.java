@@ -4,7 +4,7 @@ import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioNaoEnco
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.porta.FuncionarioRepository;
 import br.com.luismarangoni.jornada_api.marcacao.aplicacao.MarcacaoConsulta;
 import br.com.luismarangoni.jornada_api.marcacao.aplicacao.porta.MarcacaoPontoRepository;
-
+import java.time.Instant;
 import java.util.List;
 
 public class ApurarJornadaFuncionario {
@@ -33,6 +33,28 @@ public class ApurarJornadaFuncionario {
 
         List<MarcacaoConsulta> marcacoes =
                 marcacaoRepository.listarPorFuncionario(funcionarioId);
+
+        return apurador.calcular(marcacoes);
+    }
+
+    public ResumoJornada executar(
+            Long funcionarioId,
+            Instant inicio,
+            Instant fim
+    ) {
+        funcionarioRepository.buscarPorId(funcionarioId)
+                .orElseThrow(
+                        () -> new FuncionarioNaoEncontradoException(
+                                funcionarioId
+                        )
+                );
+
+        List<MarcacaoConsulta> marcacoes =
+                marcacaoRepository.listarPorFuncionarioEPeriodo(
+                        funcionarioId,
+                        inicio,
+                        fim
+                );
 
         return apurador.calcular(marcacoes);
     }

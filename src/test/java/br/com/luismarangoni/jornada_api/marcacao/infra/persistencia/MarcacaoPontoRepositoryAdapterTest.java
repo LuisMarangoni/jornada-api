@@ -73,4 +73,56 @@ class MarcacaoPontoRepositoryAdapterTest {
         assertEquals(TipoMarcacao.SAIDA, marcacoes.get(1).tipo());
         assertEquals(saida, marcacoes.get(1).ocorridaEm());
     }
+
+    @Test
+    void deveListarMarcacoesApenasDoPeriodoInformado() {
+        var funcionario = funcionarioRepository.saveAndFlush(
+                new FuncionarioJpaEntity(
+                        "MAT-1701",
+                        "Ana Silva",
+                        "ana1701@email.com",
+                        true
+                )
+        );
+
+        Long funcionarioId = funcionario.getId();
+
+        repository.salvar(new MarcacaoPonto(
+                funcionarioId,
+                TipoMarcacao.ENTRADA,
+                Instant.parse("2026-09-17T08:00:00Z")
+        ));
+
+        repository.salvar(new MarcacaoPonto(
+                funcionarioId,
+                TipoMarcacao.SAIDA,
+                Instant.parse("2026-09-17T17:00:00Z")
+        ));
+
+        repository.salvar(new MarcacaoPonto(
+                funcionarioId,
+                TipoMarcacao.ENTRADA,
+                Instant.parse("2026-09-18T08:00:00Z")
+        ));
+
+        Instant inicio = Instant.parse("2026-09-17T00:00:00Z");
+        Instant fim = Instant.parse("2026-09-18T00:00:00Z");
+
+        List<MarcacaoConsulta> resultado =
+                repository.listarPorFuncionarioEPeriodo(
+                        funcionarioId,
+                        inicio,
+                        fim
+                );
+
+        assertEquals(2, resultado.size());
+        assertEquals(
+                Instant.parse("2026-09-17T08:00:00Z"),
+                resultado.get(0).ocorridaEm()
+        );
+        assertEquals(
+                Instant.parse("2026-09-17T17:00:00Z"),
+                resultado.get(1).ocorridaEm()
+        );
+    }
 }

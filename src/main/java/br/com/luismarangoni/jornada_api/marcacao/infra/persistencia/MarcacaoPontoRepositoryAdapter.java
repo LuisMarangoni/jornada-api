@@ -4,7 +4,7 @@ import br.com.luismarangoni.jornada_api.marcacao.MarcacaoPonto;
 import br.com.luismarangoni.jornada_api.marcacao.aplicacao.MarcacaoConsulta;
 import br.com.luismarangoni.jornada_api.marcacao.aplicacao.porta.MarcacaoPontoRepository;
 import org.springframework.stereotype.Repository;
-
+import java.time.Instant;
 import java.util.List;
 
 @Repository
@@ -17,6 +17,28 @@ public class MarcacaoPontoRepositoryAdapter
             MarcacaoPontoJpaRepository jpaRepository
     ) {
         this.jpaRepository = jpaRepository;
+    }
+
+    @Override
+    public List<MarcacaoConsulta> listarPorFuncionarioEPeriodo(
+            Long funcionarioId,
+            Instant inicio,
+            Instant fim
+    ) {
+        return jpaRepository
+                .buscarPorFuncionarioEPeriodo(
+                        funcionarioId,
+                        inicio,
+                        fim
+                )
+                .stream()
+                .map(entidade -> new MarcacaoConsulta(
+                        entidade.getId(),
+                        entidade.getFuncionarioId(),
+                        entidade.getTipo(),
+                        entidade.getOcorridaEm()
+                ))
+                .toList();
     }
 
     @Override
@@ -46,4 +68,6 @@ public class MarcacaoPontoRepositoryAdapter
                 ))
                 .toList();
     }
+
+
 }
