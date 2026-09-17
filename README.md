@@ -19,7 +19,7 @@ Projeto de portfólio em desenvolvimento para gestão de funcionários e jornada
 - Endpoint `POST /funcionarios` com DTOs em records e validação da entrada.
 - Endpoint `GET /funcionarios/{id}` com DTO de resposta e tratamento de inexistência.
 - Erros HTTP de validação e matrícula duplicada padronizados com `ProblemDetail`.
-- 83 testes: 12 do domínio de funcionário, 7 do domínio de marcação/apuração, 27 do controller HTTP, 7 de segurança, 9 do adaptador, 3 do cadastro, 2 da consulta, 2 da listagem, 2 da atualização, 2 da alteração de status, 5 do registro de marcação, 2 da consulta de marcações, 2 da apuração, 2 do repositório JPA e 1 de contexto Spring.
+- 95 testes: 12 do domínio de funcionário, 4 do domínio de marcação, 3 da apuração de jornada, 27 do controller HTTP, 10 de segurança, 10 do adaptador de funcionário, 1 do adaptador de marcação, 3 do cadastro, 2 da consulta, 2 da listagem, 2 da atualização, 2 da alteração de status, 5 do registro de marcação, 2 da consulta de marcações, 2 da apuração por funcionário, 3 da validação de acesso, 2 do vínculo de usuário, 2 do repositório JPA e 1 de contexto Spring.
 - GitHub Actions executa a suíte com Java 21 em pushes e pull requests para `main`.
 
 O cadastro, a consulta por ID, a atualização, a alteração de status, a listagem paginada, o registro/consulta de marcações e o resumo da jornada estão disponíveis por HTTP. As rotas são protegidas por JWT compatível com o `users-api`; a emissão de tokens permanece centralizada nesse serviço. O DTO de entrada valida formato de e-mail e limites de tamanho; o domínio mantém suas próprias verificações de campos obrigatórios e normalização. A unicidade da matrícula é garantida no PostgreSQL e traduzida para conflito HTTP. IDs inexistentes e parâmetros de paginação inválidos retornam `ProblemDetail`.
@@ -311,7 +311,7 @@ GET http://localhost:8082/funcionarios?pagina=0&tamanho=10
 
 O `jornada-api` atua como Resource Server e valida tokens JWT emitidos pelo `users-api`. Os dois serviços devem utilizar o mesmo valor de `JWT_SECRET`, configurado apenas no `.env` local. A API não possui endpoint de login próprio.
 
-Operações administrativas de cadastro, atualização e alteração de status exigem os perfis `SUPORTE` ou `ADMIN`. Consultas e marcações exigem apenas autenticação nesta etapa; a validação de acesso do usuário ao próprio funcionário será adicionada quando o vínculo entre as identidades for modelado.
+Operações administrativas de cadastro, atualização, alteração de status e vínculo exigem os perfis `SUPORTE` ou `ADMIN`. Usuários comuns só acessam o funcionário associado ao `sub` do próprio JWT; tentativas de acesso a outro funcionário retornam `403`. Consultas administrativas gerais continuam restritas aos perfis de suporte ou administração.
 
 A documentação OpenAPI permanece pública; as demais rotas exigem o header:
 

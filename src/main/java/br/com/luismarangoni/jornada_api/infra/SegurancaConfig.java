@@ -88,7 +88,12 @@ public class SegurancaConfig {
 
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/funcionarios/**"
+                                "/funcionarios"
+                        ).hasAnyRole("SUPORTE", "ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/funcionarios/*"
                         ).authenticated()
 
                         .requestMatchers(

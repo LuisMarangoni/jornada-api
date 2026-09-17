@@ -9,11 +9,18 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import br.com.luismarangoni.jornada_api.funcionario.infra.persistencia.FuncionarioJpaEntity;
+import br.com.luismarangoni.jornada_api.funcionario.infra.persistencia.FuncionarioJpaRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
+@Transactional
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(PostgresTestConfiguration.class)
@@ -21,6 +28,9 @@ class SegurancaControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private FuncionarioJpaRepository funcionarioRepository;
 
     @Test
     void deveNegarRotaProtegidaSemToken() throws Exception {
@@ -42,7 +52,7 @@ class SegurancaControllerTest {
                                                         )
                                                 )))
                 )
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -85,7 +95,7 @@ class SegurancaControllerTest {
                                                         )
                                                 )))
                 )
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -169,5 +179,92 @@ class SegurancaControllerTest {
                                                 )))
                 )
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void devePermitirUsuarioConsultarProprioFuncionario()
+            throws Exception {
+        var funcionario = funcionarioRepository.saveAndFlush(
+                new FuncionarioJpaEntity(
+                        "MAT-1501",
+                        "Ana Silva",
+                        "ana1501@email.com",
+                        true,
+                        801L
+                )
+        );
+
+        mockMvc.perform(
+                        get("/funcionarios/{id}", funcionario.getId())
+                                .with(jwt()
+                                        .authorities(
+                                                new SimpleGrantedAuthority(
+                                                        "ROLE_USUARIO"
+                                                )
+                                        )
+                                        .jwt(token -> token
+                                                .subject("801")
+                                                .claim(
+                                                        "perfis",
+                                                        java.util.List.of(
+                                                                "USUARIO"
+                                                        )
+                                                )))
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id")
+                        .value(funcionario.getId()));
+    }
+
+    @Test
+    void deveNegarConsultaParaUsuarioSemVinculo()
+            throws Exception {
+        var funcionario = funcionarioRepository.saveAndFlush(
+                new FuncionarioJpaEntity(
+                        "MAT-1502",
+                        "Bruno Souza",
+                        "bruno1502@email.com",
+                        true,
+                        802L
+                )
+        );
+
+        mockMvc.perform(
+                        get("/funcionarios/{id}", funcionario.getId())
+                                .with(jwt()
+                                        .authorities(
+                                                new SimpleGrantedAuthority("ROLE_USUARIO")
+                                        )
+                                        .jwt(token -> token
+                                                .subject("1")
+                                                .claim(
+                                                        "perfis",
+                                                        java.util.List.of("USUARIO")
+                                                )))
+                )
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deveNegarListagemGeralParaUsuarioComum()
+            throws Exception {
+        mockMvc.perform(
+                        get("/funcionarios")
+                                .with(jwt()
+                                        .authorities(
+                                                new SimpleGrantedAuthority(
+                                                        "ROLE_USUARIO"
+                                                )
+                                        )
+                                        .jwt(token -> token
+                                                .subject("801")
+                                                .claim(
+                                                        "perfis",
+                                                        java.util.List.of(
+                                                                "USUARIO"
+                                                        )
+                                                )))
+                )
+                .andExpect(status().isForbidden());
     }
 }

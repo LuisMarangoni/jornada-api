@@ -32,7 +32,10 @@ import br.com.luismarangoni.jornada_api.marcacao.apuracao.ApurarJornadaFuncionar
 import java.util.List;
 import br.com.luismarangoni.jornada_api.funcionario.api.dto.VincularUsuarioRequest;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.VincularUsuarioFuncionario;
-
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.ValidarAcessoFuncionario;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 
 @RestController
@@ -48,6 +51,7 @@ public class FuncionarioController {
     private final ListarMarcacoesFuncionario listarMarcacoesFuncionario;
     private final ApurarJornadaFuncionario apurarJornadaFuncionario;
     private final VincularUsuarioFuncionario vincularUsuarioFuncionario;
+    private final ValidarAcessoFuncionario validarAcessoFuncionario;
 
     public FuncionarioController(
             CadastrarFuncionario cadastrarFuncionario,
@@ -58,7 +62,8 @@ public class FuncionarioController {
             RegistrarMarcacao registrarMarcacao,
             ListarMarcacoesFuncionario listarMarcacoesFuncionario,
             ApurarJornadaFuncionario apurarJornadaFuncionario,
-            VincularUsuarioFuncionario vincularUsuarioFuncionario
+            VincularUsuarioFuncionario vincularUsuarioFuncionario,
+            ValidarAcessoFuncionario validarAcessoFuncionario
     ) {
         this.cadastrarFuncionario = cadastrarFuncionario;
         this.buscarFuncionario = buscarFuncionario;
@@ -69,6 +74,7 @@ public class FuncionarioController {
         this.listarMarcacoesFuncionario = listarMarcacoesFuncionario;
         this.apurarJornadaFuncionario = apurarJornadaFuncionario;
         this.vincularUsuarioFuncionario = vincularUsuarioFuncionario;
+        this.validarAcessoFuncionario = validarAcessoFuncionario;
     }
 
     @PostMapping
@@ -101,8 +107,12 @@ public class FuncionarioController {
 
     @GetMapping("/{funcionarioId}/marcacoes")
     public List<MarcacaoResponse> listarMarcacoes(
-            @PathVariable Long funcionarioId
+            @PathVariable Long funcionarioId,
+            @AuthenticationPrincipal Jwt jwt,
+            Authentication authentication
     ) {
+        validarAcesso(funcionarioId, jwt, authentication);
+
         return listarMarcacoesFuncionario.executar(funcionarioId)
                 .stream()
                 .map(MarcacaoResponse::from)
@@ -110,7 +120,13 @@ public class FuncionarioController {
     }
 
     @GetMapping("/{id}")
-    public FuncionarioResponse buscar(@PathVariable Long id) {
+    public FuncionarioResponse buscar(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Jwt jwt,
+            Authentication authentication
+    ) {
+        validarAcesso(id, jwt, authentication);
+
         return FuncionarioResponse.from(
                 buscarFuncionario.executar(id)
         );
@@ -140,8 +156,12 @@ public class FuncionarioController {
     @ResponseStatus(HttpStatus.CREATED)
     public MarcacaoResponse registrarMarcacao(
             @PathVariable Long funcionarioId,
-            @Valid @RequestBody RegistrarMarcacaoRequest request
+            @Valid @RequestBody RegistrarMarcacaoRequest request,
+            @AuthenticationPrincipal Jwt jwt,
+            Authentication authentication
     ) {
+        validarAcesso(funcionarioId, jwt, authentication);
+
         return MarcacaoResponse.from(
                 registrarMarcacao.executar(
                         funcionarioId,
@@ -152,8 +172,12 @@ public class FuncionarioController {
 
     @GetMapping("/{funcionarioId}/jornada/resumo")
     public ResumoJornadaResponse resumirJornada(
-            @PathVariable Long funcionarioId
+            @PathVariable Long funcionarioId,
+            @AuthenticationPrincipal Jwt jwt,
+            Authentication authentication
     ) {
+        validarAcesso(funcionarioId, jwt, authentication);
+
         return ResumoJornadaResponse.from(
                 funcionarioId,
                 apurarJornadaFuncionario.executar(funcionarioId)
@@ -171,5 +195,31 @@ public class FuncionarioController {
                 request.usuarioId()
         );
     }
+
+    private void validarAcesso(
+            Long funcionarioId,
+            Jwt jwt,
+            Authentication authentication
+    ) {
+        if (jwt == null || authentication == null) {
+            return;
+        }
+
+        boolean administrativo = authentication
+                .getAuthorities()
+                .stream()
+                .anyMatch(authority ->
+                        authority.getAuthority().equals("ROLE_SUPORTE")
+                                || authority.getAuthority().equals("ROLE_ADMIN")
+                );
+
+        if (!administrativo) {
+            validarAcessoFuncionario.executar(
+                    funcionarioId,
+                    Long.valueOf(jwt.getSubject())
+            );
+        }
+    }
+
 
 }

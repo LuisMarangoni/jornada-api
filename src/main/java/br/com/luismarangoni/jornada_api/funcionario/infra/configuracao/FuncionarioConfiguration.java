@@ -1,14 +1,9 @@
 package br.com.luismarangoni.jornada_api.funcionario.infra.configuracao;
 
-import br.com.luismarangoni.jornada_api.funcionario.aplicacao.VincularUsuarioFuncionario;
-import br.com.luismarangoni.jornada_api.funcionario.aplicacao.AtualizarFuncionario;
-import br.com.luismarangoni.jornada_api.funcionario.aplicacao.BuscarFuncionario;
-import br.com.luismarangoni.jornada_api.funcionario.aplicacao.CadastrarFuncionario;
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.*;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.porta.FuncionarioRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import br.com.luismarangoni.jornada_api.funcionario.aplicacao.ListarFuncionarios;
-import br.com.luismarangoni.jornada_api.funcionario.aplicacao.AlterarStatusFuncionario;
 import br.com.luismarangoni.jornada_api.marcacao.aplicacao.RegistrarMarcacao;
 import br.com.luismarangoni.jornada_api.marcacao.aplicacao.porta.MarcacaoPontoRepository;
 import br.com.luismarangoni.jornada_api.marcacao.aplicacao.ListarMarcacoesFuncionario;
@@ -102,6 +97,13 @@ public class FuncionarioConfiguration {
             FuncionarioRepository repository
     ) {
         return new VincularUsuarioFuncionario(repository);
+    }
+
+    @Bean
+    public ValidarAcessoFuncionario validarAcessoFuncionario(
+            FuncionarioRepository repository
+    ) {
+        return new ValidarAcessoFuncionario(repository);
     }
 
 }

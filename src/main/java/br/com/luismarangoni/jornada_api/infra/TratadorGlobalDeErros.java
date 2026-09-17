@@ -1,5 +1,6 @@
 package br.com.luismarangoni.jornada_api.infra;
 
+import br.com.luismarangoni.jornada_api.funcionario.aplicacao.FuncionarioAcessoNegadoException;
 import br.com.luismarangoni.jornada_api.funcionario.aplicacao.MatriculaJaCadastradaException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -139,6 +140,20 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler {
         );
 
         problema.setTitle("Usuário já vinculado");
+
+        return problema;
+    }
+
+    @ExceptionHandler(FuncionarioAcessoNegadoException.class)
+    public ProblemDetail tratarAcessoNegado(
+            FuncionarioAcessoNegadoException exception
+    ) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(
+                HttpStatus.FORBIDDEN,
+                exception.getMessage()
+        );
+
+        problema.setTitle("Acesso ao funcionário negado");
 
         return problema;
     }
